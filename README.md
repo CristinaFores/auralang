@@ -1,29 +1,58 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="icons/auralang_logo_pack/presentation/wordmark-dark.png">
-    <img src="icons/auralang_logo_pack/presentation/wordmark-light.png" alt="AuraLang — Traducción en tiempo real" width="420">
+    <img src="icons/auralang_logo_pack/presentation/wordmark-light.png" alt="AuraLang — Real-time audio translation" width="420">
   </picture>
 </p>
 
-Real-time audio translation Chrome extension. Captures the active tab's audio, transcribes it locally with Whisper, translates the text, and reads the result aloud via the browser's built-in TTS. No API key required.
+<p align="center">
+  <strong>Real-time audio translation for any browser tab.</strong><br>
+  Transcribes locally with Whisper, translates, and reads it back aloud — no API key, no account.
+</p>
 
-**Docs:** [AGENTS.md](./AGENTS.md) — coding conventions, architecture, testing and accessibility contract.
+<p align="center">
+  <a href="#-status"><img alt="Chrome Web Store — coming soon" src="https://img.shields.io/badge/Chrome_Web_Store-Coming_soon-6C4DFF?style=for-the-badge&logo=googlechrome&logoColor=white"></a>
+</p>
+
+<p align="center">
+  <img alt="Manifest V3" src="https://img.shields.io/badge/Manifest-V3-6C4DFF">
+  <img alt="React 18" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white">
+  <img alt="Vite" src="https://img.shields.io/badge/Vite-build-646CFF?logo=vite&logoColor=white">
+  <img alt="No API key" src="https://img.shields.io/badge/API_key-not_required-22C55E">
+</p>
 
 ---
 
-## How it works
+## 🚧 Status
+
+**Coming soon to the Chrome Web Store.**
+
+The store listing is in review. Once it's live, the install link will be right here:
+
+> 🔗 **Chrome Web Store:** _coming soon_ — meanwhile, [run it locally](#-run-it-locally).
+
+## ✨ What it does
+
+Watching a talk, a podcast, or a video in a language you don't speak? AuraLang listens to the tab, translates on the fly, and speaks the result — so you can **watch the screen instead of reading subtitles**.
+
+- 🎧 **Any tab with audio** — videos, calls, podcasts, live streams.
+- 🧠 **On-device transcription** — Whisper runs locally; audio never leaves your machine.
+- 🗣️ **Spoken translation** — the original tab audio is muted; you only hear the translation.
+- 🔒 **No key, no account, no backend** — settings live only in your browser.
+- 🌗 **Light & dark themes**, interface in **English and Spanish**.
+
+## ⚙️ How it works
 
 ```
-Tab audio → Whisper (local, on-device transcription) → Google Translate → Web Speech API (speech)
+Tab audio ─▶ Whisper (local transcription) ─▶ Google Translate ─▶ Web Speech API (spoken output)
 ```
 
-The original tab audio is muted while capturing. You only hear the translated version.
+Audio is buffered and cut on natural speech pauses, transcribed on-device, translated, and read aloud through the browser's built-in voice. The original tab audio is muted while capturing.
 
-## Requirements
+## 🚀 Run it locally
 
-- Google Chrome 116+
-
-## Local setup
+**Requirements:** Google Chrome 116+
 
 ```bash
 npm install
@@ -32,86 +61,67 @@ npm run build
 
 Then in Chrome:
 
-1. Go to `chrome://extensions`
-2. Enable **Developer mode** (top right)
+1. Open `chrome://extensions`
+2. Enable **Developer mode** (top-right)
 3. Click **Load unpacked** → select the `dist/` folder
-4. Open the extension popup, pick source/target languages, and click **Iniciar traducción**
-5. Navigate to any tab with audio and start
+4. Open the popup, pick source & target languages, and hit **Start translation**
+5. Switch to any tab with audio and enjoy
 
-## Development
+> First run downloads the Whisper model (~150 MB) once; it's cached locally afterwards.
+
+## 🛠️ Development
 
 ```bash
-npm run dev        # Vite HMR dev server (reload extension manually after changes)
-npm run type-check # TypeScript check without building
-npm run zip        # Build + create dist.zip for Chrome Web Store upload
+npm run dev         # Vite dev server (reload the extension after changes)
+npm run type-check  # TypeScript, no emit
+npm run lint        # ESLint
+npm run test        # Jest + React Testing Library
+npm run zip         # Build + package dist.zip for the Web Store
 ```
 
-## Tech stack
+## 🧱 Tech stack
 
 | Layer | Tool |
 |---|---|
-| Extension API | Chrome MV3 — tabCapture, offscreen, storage |
-| Build | Vite + @crxjs/vite-plugin |
-| UI | React 18 + TypeScript strict |
+| Extension API | Chrome MV3 — `tabCapture`, `offscreen`, `storage` |
+| Build | Vite + `@crxjs/vite-plugin` |
+| UI | React 18 + TypeScript (strict) |
 | Styles | Tailwind CSS |
-| Transcription | Whisper (`@huggingface/transformers`, runs locally in an offscreen document) |
-| Translation | Google Translate (unofficial free endpoint) |
+| Transcription | Whisper via `@huggingface/transformers` (local, offscreen document) |
+| Translation | Google Translate (free, unofficial endpoint) |
 | Speech | Web Speech API (`speechSynthesis`) |
 
-## Project structure
+## 📁 Project structure
 
 ```
 src/
-  background/     # Service worker — tabCapture + offscreen lifecycle
-  offscreen/      # Persistent AudioContext + transcription/translation/TTS pipeline
-  popup/          # React UI — language selectors + translation toggle
-    components/   # Header, StatusHero, WaveformIndicator, LanguageSelect, SettingsPanel...
-    hooks/        # useApiConfig (stores languages/theme), useTranslation, useI18n
-  welcome/        # First-install onboarding page (pin the extension)
-  services/       # transcriptionService, translationService, ttsService
-  types/          # Shared TypeScript interfaces
+  background/   # Service worker — tabCapture + offscreen lifecycle
+  offscreen/    # AudioContext + transcription / translation / TTS pipeline
+  popup/        # React UI
+    components/ # Header, StatusHero, WaveformIndicator, LanguageSelect, SettingsPanel…
+    hooks/      # useApiConfig, useTranslation, useI18n, useTheme
+  welcome/      # First-install onboarding page
+  services/     # transcriptionService, translationService, ttsService
+  types/        # Shared TypeScript interfaces
 ```
 
-## Quality & AGENTS.md compliance
+## 🔐 Privacy
 
-The project follows the conventions in [AGENTS.md](./AGENTS.md). Current status:
+No backend, no telemetry, no account. Transcription happens on your device; only the transcribed **text** is sent to Google Translate to get the translation back. Settings (languages, theme) are stored in `chrome.storage.local` on your machine. Full details in [PRIVACY.md](./PRIVACY.md).
 
-| Area | Status | Notes |
-|---|---|---|
-| TypeScript strict | ✅ | `strict`, `noUnusedLocals`, `noUnusedParameters` |
-| Architecture | ✅ | Services isolated; typed messages in `src/types/` |
-| i18n | ✅ | `en` / `es` locale files; no hardcoded UI copy |
-| Accessibility | 🟡 | Semantic markup in popup; manual audit pending |
-| ESLint | ✅ | Flat config with TS + React Hooks |
-| Unit tests (Jest + RTL) | 🟡 | Initial coverage for `useApiConfig` and `translationService` |
-| MSW for HTTP | ✅ | `translationService` test uses MSW |
-| CI (GitHub Actions) | ✅ | `type-check`, `lint`, `test`, `build` on push/PR |
+## 📚 Docs
 
-### How to reach full compliance
+- [AGENTS.md](./AGENTS.md) — architecture, TypeScript, services, testing & accessibility conventions (source of truth for contributors).
+- [PRIVACY.md](./PRIVACY.md) — privacy policy.
 
-1. **Expand test coverage** — add cases for `useTranslation`, background/offscreen message flow, and popup user flows.
-2. **Accessibility pass** — keyboard navigation, focus rings, and contrast review in both themes.
-3. **Pre-delivery gate** — before release, all of these must pass:
-
-```bash
-npm run type-check
-npm run lint
-npm run test
-npm run build
-```
-
-Read [AGENTS.md](./AGENTS.md) before contributing — it is the source of truth for architecture, TypeScript, services, testing and accessibility rules.
-
-## Publishing to Chrome Web Store
+## 📦 Publishing
 
 ```bash
 npm run zip
 ```
 
-Upload `dist.zip` to the [Chrome Developer Dashboard](https://chrome.google.com/webstore/devconsole). One-time $5 developer registration required.
+Upload `dist.zip` to the [Chrome Developer Dashboard](https://chrome.google.com/webstore/devconsole).
 
-## Notes
+---
 
-- Audio chunks are processed continuously while translation is active; latency depends on the local Whisper model and network round-trip to the translation endpoint.
-- No backend, no telemetry, no account. Settings (languages, theme) are stored only in `chrome.storage.local` on your own machine.
-- The Google Translate endpoint used here is the free, unofficial one — fine for personal use, but not backed by an SLA. Consider a paid translation API before high-volume or commercial use.
+<p align="center"><sub>Built with care — concepts before code.</sub></p>
