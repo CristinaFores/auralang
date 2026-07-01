@@ -27,7 +27,6 @@ export async function transcribeAudio(samples: Float32Array): Promise<string> {
   const asr = await getTranscriber()
 
   const result = await asr(samples, {
-    language: 'auto',
     task: 'transcribe',
   })
 
