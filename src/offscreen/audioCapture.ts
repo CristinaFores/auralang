@@ -15,7 +15,11 @@ const WHISPER_SAMPLE_RATE = 16000
 // Whisper near-silent fragments that make it hallucinate repeated words. Instead,
 // buffer continuously and cut on natural speech pauses, so each chunk is a whole
 // phrase. MAX is a safety net for continuous speech with no pauses.
-const PAUSE_MS = 600
+//
+// 600ms was too short: normal mid-sentence breathing/comma pauses are often
+// 300-600ms, so it was cutting sentences in half, not just between them.
+// 900ms sits past that range while still catching real between-sentence pauses.
+const PAUSE_MS = 900
 const MIN_CHUNK_MS = 600
 const MAX_CHUNK_MS = 8000
 

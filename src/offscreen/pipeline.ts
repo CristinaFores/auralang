@@ -33,7 +33,7 @@ export async function processAudioChunk(
   lastTranscription = transcription
   onTranscript({ original: transcription, translated: null })
 
-  const translation = await translateText(transcription, targetLang)
+  const translation = await translateText(transcription, targetLang, sourceLang)
   if (sessionId !== mySession) return
   if (!translation) return
 

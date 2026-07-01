@@ -9,7 +9,11 @@ const TRANSLATE_URL = 'https://translate.googleapis.com/translate_a/single'
 const server = setupServer(
   http.get(TRANSLATE_URL, ({ request }) => {
     const url = new URL(request.url)
-    if (url.searchParams.get('q') !== 'Hello world' || url.searchParams.get('tl') !== 'es') {
+    if (
+      url.searchParams.get('q') !== 'Hello world' ||
+      url.searchParams.get('tl') !== 'es' ||
+      url.searchParams.get('sl') !== 'en'
+    ) {
       return new HttpResponse(null, { status: 400 })
     }
 
@@ -26,11 +30,11 @@ afterAll(() => server.close())
 
 describe('translateText', () => {
   it('returns translated text when API responds successfully', async () => {
-    await expect(translateText('Hello world', 'es')).resolves.toBe('Hola mundo')
+    await expect(translateText('Hello world', 'es', 'en')).resolves.toBe('Hola mundo')
   })
 
   it('returns empty string for empty input', async () => {
-    await expect(translateText('   ', 'es')).resolves.toBe('')
+    await expect(translateText('   ', 'es', 'en')).resolves.toBe('')
   })
 
   it('throws when API returns non-ok status', async () => {
@@ -38,6 +42,6 @@ describe('translateText', () => {
       http.get(TRANSLATE_URL, () => new HttpResponse(null, { status: 500 })),
     )
 
-    await expect(translateText('Hello world', 'es')).rejects.toThrow('Translation failed: 500')
+    await expect(translateText('Hello world', 'es', 'en')).rejects.toThrow('Translation failed: 500')
   })
 })
