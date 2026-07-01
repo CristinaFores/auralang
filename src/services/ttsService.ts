@@ -1,12 +1,20 @@
 import { LOCALE_MAP } from '../constants/languages'
 
+interface QueuedSpeech {
+  text: string
+  lang: string
+}
+
 let speaking = false
-let pendingText: string | null = null
-let pendingLang = 'es'
+let queue: QueuedSpeech[] = []
 let lastSpoken = ''
 let watchdogId: ReturnType<typeof setTimeout> | null = null
 
 const WATCHDOG_MS = 15000
+// If translations arrive faster than they can be spoken, don't let the queue grow
+// forever — that would mean falling further and further behind the live video.
+// Drop the oldest backlog and catch back up instead.
+const MAX_QUEUE_LENGTH = 3
 
 function clearWatchdog(): void {
   if (watchdogId !== null) {
@@ -35,6 +43,11 @@ function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
   )
 }
 
+function playNext(): void {
+  const next = queue.shift()
+  if (next) speakNow(next.text, next.lang)
+}
+
 function speakNow(text: string, lang: string): void {
   const utterance = new SpeechSynthesisUtterance(text)
   const locale = LOCALE_MAP[lang] ?? lang
@@ -48,34 +61,24 @@ function speakNow(text: string, lang: string): void {
   utterance.onend = () => {
     clearWatchdog()
     speaking = false
-    if (pendingText && pendingText !== lastSpoken) {
-      const next = pendingText
-      const nextLang = pendingLang
-      pendingText = null
-      speakNow(next, nextLang)
-    }
+    playNext()
   }
 
   utterance.onerror = () => {
     clearWatchdog()
     speaking = false
-    pendingText = null
+    playNext()
   }
 
   speaking = true
   lastSpoken = text
   clearWatchdog()
   // speechSynthesis in offscreen documents can silently stop firing onend/onerror,
-  // leaving `speaking` stuck true and dropping every translation after it.
+  // leaving `speaking` stuck true and blocking the rest of the queue forever.
   watchdogId = setTimeout(() => {
     watchdogId = null
     speaking = false
-    if (pendingText) {
-      const next = pendingText
-      const nextLang = pendingLang
-      pendingText = null
-      speakNow(next, nextLang)
-    }
+    playNext()
   }, WATCHDOG_MS)
   window.speechSynthesis.speak(utterance)
 }
@@ -85,8 +88,10 @@ export function speak(text: string, lang: string = 'es'): void {
   if (!trimmed || trimmed === lastSpoken) return
 
   if (speaking) {
-    pendingText = trimmed
-    pendingLang = lang
+    queue.push({ text: trimmed, lang })
+    // Falling behind — drop the oldest backlog so playback catches back up
+    // with the live video instead of drifting further out of sync.
+    while (queue.length > MAX_QUEUE_LENGTH) queue.shift()
     return
   }
 
@@ -95,7 +100,7 @@ export function speak(text: string, lang: string = 'es'): void {
 
 export function stopSpeech(): void {
   clearWatchdog()
-  pendingText = null
+  queue = []
   speaking = false
   lastSpoken = ''
   window.speechSynthesis.cancel()

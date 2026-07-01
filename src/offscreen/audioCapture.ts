@@ -1,15 +1,27 @@
 // Manages the AudioContext lifecycle and tab stream capture inside the offscreen document.
 // The offscreen doc stays alive as long as Chrome keeps it — this is intentional (MV3 pattern).
 
+import { isSilent } from '../utils/audioLevel'
+
 export interface AudioCaptureHandlers {
   onChunk: (samples: Float32Array) => void
   onError: (message: string) => void
   onEnded: () => void
 }
 
-const CHUNK_INTERVAL_MS = 4000
 const WHISPER_SAMPLE_RATE = 16000
-const SAMPLES_PER_CHUNK = WHISPER_SAMPLE_RATE * (CHUNK_INTERVAL_MS / 1000)
+
+// Cutting on a fixed clock (old: every 4s) slices sentences mid-word and feeds
+// Whisper near-silent fragments that make it hallucinate repeated words. Instead,
+// buffer continuously and cut on natural speech pauses, so each chunk is a whole
+// phrase. MAX is a safety net for continuous speech with no pauses.
+const PAUSE_MS = 600
+const MIN_CHUNK_MS = 600
+const MAX_CHUNK_MS = 8000
+
+const PAUSE_SAMPLES = WHISPER_SAMPLE_RATE * (PAUSE_MS / 1000)
+const MIN_CHUNK_SAMPLES = WHISPER_SAMPLE_RATE * (MIN_CHUNK_MS / 1000)
+const MAX_CHUNK_SAMPLES = WHISPER_SAMPLE_RATE * (MAX_CHUNK_MS / 1000)
 
 const WORKLET_URL = chrome.runtime.getURL('capture-worklet.js')
 
@@ -17,25 +29,42 @@ let captureNode: AudioWorkletNode | null = null
 let audioContext: AudioContext | null = null
 let pendingSamples: Float32Array[] = []
 let pendingLength = 0
+let silenceRunSamples = 0
+let hasSpeechInBuffer = false
+
+function flush(handlers: AudioCaptureHandlers): void {
+  const chunk = new Float32Array(pendingLength)
+  let offset = 0
+  for (const part of pendingSamples) {
+    chunk.set(part, offset)
+    offset += part.length
+  }
+  pendingSamples = []
+  pendingLength = 0
+  silenceRunSamples = 0
+  const shouldEmit = hasSpeechInBuffer
+  hasSpeechInBuffer = false
+
+  // Don't bother sending an all-silence buffer to Whisper — it has nothing to
+  // transcribe and near-empty audio is exactly what triggers hallucinated output.
+  if (shouldEmit) handlers.onChunk(chunk)
+}
 
 function pushSamples(samples: Float32Array, handlers: AudioCaptureHandlers): void {
   pendingSamples.push(samples)
   pendingLength += samples.length
 
-  while (pendingLength >= SAMPLES_PER_CHUNK) {
-    const chunk = new Float32Array(SAMPLES_PER_CHUNK)
-    let offset = 0
-    while (offset < SAMPLES_PER_CHUNK) {
-      const head = pendingSamples[0]
-      const take = Math.min(head.length, SAMPLES_PER_CHUNK - offset)
-      chunk.set(head.subarray(0, take), offset)
-      offset += take
-      if (take === head.length) pendingSamples.shift()
-      else pendingSamples[0] = head.subarray(take)
-    }
-    pendingLength -= SAMPLES_PER_CHUNK
-    handlers.onChunk(chunk)
+  if (isSilent(samples)) {
+    silenceRunSamples += samples.length
+  } else {
+    silenceRunSamples = 0
+    hasSpeechInBuffer = true
   }
+
+  const hitPause = silenceRunSamples >= PAUSE_SAMPLES && pendingLength >= MIN_CHUNK_SAMPLES
+  const hitMax = pendingLength >= MAX_CHUNK_SAMPLES
+
+  if (hitPause || hitMax) flush(handlers)
 }
 
 export async function startAudioCapture(
