@@ -15,7 +15,7 @@ export async function getTranscriber(): Promise<AutomaticSpeechRecognitionPipeli
   if (transcriber) return transcriber
 
   transcriber = await pipeline('automatic-speech-recognition', MODEL_ID, {
-    dtype: 'q8', // quantized — smaller and faster
+    dtype: 'fp32',
   }) as AutomaticSpeechRecognitionPipeline
 
   return transcriber
