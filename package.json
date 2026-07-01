@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "lint": "eslint .",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
     "type-check": "tsc --noEmit",
     "zip": "npm run build && cd dist && zip -r ../dist.zip . && echo 'dist.zip ready'"
   },

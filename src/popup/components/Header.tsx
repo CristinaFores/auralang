@@ -4,9 +4,10 @@ import { GearIcon } from './Icons'
 interface HeaderProps {
   tagline: string
   onOpenSettings: () => void
+  settingsAriaLabel: string
 }
 
-export function Header({ tagline, onOpenSettings }: HeaderProps) {
+export function Header({ tagline, onOpenSettings, settingsAriaLabel }: HeaderProps) {
   return (
     <header className="flex items-center gap-3">
       <LogoIcon className="h-10 w-10" />
@@ -18,7 +19,7 @@ export function Header({ tagline, onOpenSettings }: HeaderProps) {
         type="button"
         onClick={onOpenSettings}
         className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-transparent text-muted transition-colors hover:border-[var(--border-color)] hover:bg-[var(--surface-elevated)] hover:text-brand-purple"
-        aria-label="Settings"
+        aria-label={settingsAriaLabel}
       >
         <GearIcon size={18} />
       </button>

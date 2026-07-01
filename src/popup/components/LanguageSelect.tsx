@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getLanguageLabel } from '../i18n'
 import type { UiLanguage } from '../../types'
 import { LANGUAGES } from '../../constants/languages'
@@ -56,29 +56,31 @@ export function LanguageSelect({
     )
   }, [options, query])
 
-  useClickOutside(rootRef, () => onOpenChange(false), isOpen)
+  const closeDropdown = useCallback(() => {
+    setQuery('')
+    onOpenChange(false)
+  }, [onOpenChange])
+
+  useClickOutside(rootRef, closeDropdown, isOpen)
 
   useEffect(() => {
-    if (!isOpen) {
-      setQuery('')
-      return
-    }
+    if (!isOpen) return
     searchRef.current?.focus()
   }, [isOpen])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
-        onOpenChange(false)
+        closeDropdown()
       }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onOpenChange])
+  }, [isOpen, closeDropdown])
 
   const handleSelect = (code: string) => {
     onChange(code)
-    onOpenChange(false)
+    closeDropdown()
   }
 
   const panelPosition =
@@ -96,7 +98,13 @@ export function LanguageSelect({
           disabled={disabled}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
-          onClick={() => onOpenChange(!isOpen)}
+          onClick={() => {
+            if (isOpen) {
+              closeDropdown()
+              return
+            }
+            onOpenChange(true)
+          }}
           className={`flex w-full items-center justify-between gap-3 rounded-xl border bg-[var(--surface-elevated)] px-3.5 py-3 text-left text-body text-[var(--text-primary)] shadow-[var(--surface-shadow)] transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
             isOpen
               ? 'border-brand-purple ring-2 ring-brand-purple/20'

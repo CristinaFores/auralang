@@ -8,6 +8,8 @@ interface SettingsPanelProps {
   onClose: () => void
   uiLanguage: UiLanguage
   uiTheme: UiTheme
+  backdropCloseAriaLabel: string
+  closeAriaLabel: string
   onLanguageChange: (lang: UiLanguage) => void
   onThemeChange: (theme: UiTheme) => void
   t: (key: MessageKey) => string
@@ -18,6 +20,8 @@ export function SettingsPanel({
   onClose,
   uiLanguage,
   uiTheme,
+  backdropCloseAriaLabel,
+  closeAriaLabel,
   onLanguageChange,
   onThemeChange,
   t,
@@ -30,7 +34,7 @@ export function SettingsPanel({
         type="button"
         className="fixed inset-0 bg-black/50 z-10"
         onClick={onClose}
-        aria-label="Close settings"
+        aria-label={backdropCloseAriaLabel}
       />
       <div className="absolute top-14 right-3 z-20 w-full max-w-[248px] rounded-xl border border-[var(--border-color)] bg-[var(--surface-elevated)] shadow-[0_12px_32px_rgba(15,23,42,0.18)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.45)] p-4 flex flex-col gap-4">
         <div className="flex items-center justify-between">
@@ -39,7 +43,7 @@ export function SettingsPanel({
             type="button"
             onClick={onClose}
             className="p-1 rounded-lg text-muted hover:text-[var(--text-primary)] transition-colors"
-            aria-label="Close"
+            aria-label={closeAriaLabel}
           >
             <CloseIcon />
           </button>
