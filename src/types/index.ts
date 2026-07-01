@@ -21,3 +21,16 @@ export interface ExtensionMessage {
   type: MessageType
   payload?: unknown
 }
+
+export interface StartCapturePayload {
+  streamId: string
+  config: ApiConfig
+}
+
+export interface TranslationResultPayload {
+  text: string
+}
+
+export interface ErrorPayload {
+  message: string
+}
