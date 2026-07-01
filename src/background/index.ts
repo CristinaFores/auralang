@@ -6,7 +6,12 @@ const CAPTURE_STATE_KEY = 'auralang_capture_active'
 let captureActive = false
 
 // Create offscreen document immediately so Whisper model starts loading
-chrome.runtime.onInstalled.addListener(() => void ensureOffscreenDocument())
+chrome.runtime.onInstalled.addListener((details) => {
+  void ensureOffscreenDocument()
+  if (details.reason === 'install') {
+    void chrome.tabs.create({ url: chrome.runtime.getURL('src/welcome/index.html') })
+  }
+})
 chrome.runtime.onStartup.addListener(() => void ensureOffscreenDocument())
 
 async function setCaptureActive(active: boolean): Promise<void> {

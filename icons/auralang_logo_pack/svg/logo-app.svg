@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="AuraLang logo">
+  <defs>
+    <linearGradient id="auralang-bg" x1="128" y1="96" x2="896" y2="928" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C13AF5"/>
+      <stop offset="1" stop-color="#2637FF"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1024" height="1024" rx="225" fill="url(#auralang-bg)"/>
+  <g transform="translate(163.926 177.000) scale(0.962861)">
+    <path d="M 312 14 L 297 23 L 281 37 L 273 47 L 260 72 L 8 652 L 4 667 L 4 681 L 11 701 L 19 712 L 48 722 L 65 718 L 79 711 L 89 701 L 95 691 L 168 524 L 173 520 L 180 518 L 293 517 L 308 506 L 331 456 L 336 452 L 340 458 L 379 596 L 390 611 L 402 617 L 420 618 L 430 615 L 439 609 L 449 594 L 471 533 L 480 521 L 488 518 L 547 519 L 554 524 L 559 533 L 628 692 L 634 702 L 650 715 L 672 720 L 674 722 L 698 714 L 711 702 L 717 689 L 718 664 L 715 653 L 455 56 L 444 40 L 428 25 L 408 13 L 391 7 L 372 4 L 351 4 L 328 8 Z
+M 357 127 L 366 127 L 374 130 L 388 143 L 518 439 L 512 444 L 463 444 L 449 450 L 441 459 L 425 500 L 421 505 L 416 502 L 375 357 L 371 349 L 365 343 L 353 337 L 335 337 L 323 342 L 316 349 L 280 429 L 273 440 L 265 444 L 210 444 L 204 439 L 332 146 L 342 134 Z" fill="#FFFFFF" fill-rule="evenodd"/>
+  </g>
+</svg>

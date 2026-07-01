@@ -1,3 +1,122 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --surface-bg: #F7F8FC;
+  --surface-elevated: #FFFFFF;
+  --text-primary: #0F172A;
+  --text-muted: #64748B;
+  --border-color: #E2E8F0;
+  --surface-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --brand-glow: rgba(108, 77, 255, 0.35);
+  --brand-glow-intense: rgba(168, 85, 255, 0.55);
+}
+
+.dark {
+  --surface-bg: #0B1020;
+  --surface-elevated: #121A2B;
+  --text-primary: #F8FAFC;
+  --text-muted: #64748B;
+  --border-color: #243049;
+  --surface-shadow: none;
+  --brand-glow: rgba(108, 77, 255, 0.4);
+  --brand-glow-intense: rgba(168, 85, 255, 0.65);
+}
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--surface-bg);
+    color: var(--text-primary);
+  }
+
+  .popup-shell {
+    background-color: var(--surface-bg);
+  }
+
+  img,
+  svg {
+    display: block;
+    max-width: none;
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(108, 77, 255, 0.25),
+      0 0 20px var(--brand-glow);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px rgba(168, 85, 255, 0.45),
+      0 0 36px var(--brand-glow-intense);
+  }
+}
+
+@keyframes dropdownInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dropdownInUp {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer utilities {
+  .glow-purple {
+    box-shadow:
+      0 0 0 1px rgba(108, 77, 255, 0.2),
+      0 0 24px var(--brand-glow);
+  }
+
+  .glow-purple-intense {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
+  .dropdown-list {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(108, 77, 255, 0.45) transparent;
+  }
+
+  .dropdown-list::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .dropdown-list::-webkit-scrollbar-thumb {
+    background: rgba(108, 77, 255, 0.35);
+    border-radius: 999px;
+  }
+
+  .dropdown-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .dropdown-panel-down {
+    animation: dropdownInDown 0.15s ease-out;
+  }
+
+  .dropdown-panel-up {
+    animation: dropdownInUp 0.15s ease-out;
+  }
+}

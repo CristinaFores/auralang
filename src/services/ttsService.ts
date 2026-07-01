@@ -4,6 +4,16 @@ let speaking = false
 let pendingText: string | null = null
 let pendingLang = 'es'
 let lastSpoken = ''
+let watchdogId: ReturnType<typeof setTimeout> | null = null
+
+const WATCHDOG_MS = 15000
+
+function clearWatchdog(): void {
+  if (watchdogId !== null) {
+    clearTimeout(watchdogId)
+    watchdogId = null
+  }
+}
 
 if (typeof window !== 'undefined' && window.speechSynthesis) {
   window.speechSynthesis.getVoices()
@@ -36,6 +46,7 @@ function speakNow(text: string, lang: string): void {
   if (voice) utterance.voice = voice
 
   utterance.onend = () => {
+    clearWatchdog()
     speaking = false
     if (pendingText && pendingText !== lastSpoken) {
       const next = pendingText
@@ -46,12 +57,26 @@ function speakNow(text: string, lang: string): void {
   }
 
   utterance.onerror = () => {
+    clearWatchdog()
     speaking = false
     pendingText = null
   }
 
   speaking = true
   lastSpoken = text
+  clearWatchdog()
+  // speechSynthesis in offscreen documents can silently stop firing onend/onerror,
+  // leaving `speaking` stuck true and dropping every translation after it.
+  watchdogId = setTimeout(() => {
+    watchdogId = null
+    speaking = false
+    if (pendingText) {
+      const next = pendingText
+      const nextLang = pendingLang
+      pendingText = null
+      speakNow(next, nextLang)
+    }
+  }, WATCHDOG_MS)
   window.speechSynthesis.speak(utterance)
 }
 
@@ -69,6 +94,7 @@ export function speak(text: string, lang: string = 'es'): void {
 }
 
 export function stopSpeech(): void {
+  clearWatchdog()
   pendingText = null
   speaking = false
   lastSpoken = ''

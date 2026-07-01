@@ -12,6 +12,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         offscreen: 'src/offscreen/index.html',
+        welcome: 'src/welcome/index.html',
       },
     },
   },

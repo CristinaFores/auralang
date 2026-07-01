@@ -1,108 +1,121 @@
+import { useState, useEffect } from 'react'
 import { useApiConfig } from './hooks/useApiConfig'
 import { useTranslation } from './hooks/useTranslation'
-import { StatusBadge } from './components/StatusBadge'
-import { LANGUAGES } from '../constants/languages'
+import { useI18n } from './hooks/useI18n'
+import { useTheme } from './hooks/useTheme'
+import { Header } from './components/Header'
+import { StatusHero } from './components/StatusHero'
+import { LanguageSelect } from './components/LanguageSelect'
+import { WaveformIndicator } from './components/WaveformIndicator'
+import { PrimaryButton } from './components/PrimaryButton'
+import { Footer } from './components/Footer'
+import { SettingsPanel } from './components/SettingsPanel'
+import { PlayIcon, StopIcon } from './components/Icons'
+import type { UiLanguage, UiTheme } from '../types'
+
+type OpenSelect = 'source' | 'target' | null
 
 export default function App() {
-  const { config, isSaving, isSaved, error: saveError, updateField, save } = useApiConfig()
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [openSelect, setOpenSelect] = useState<OpenSelect>(null)
+  const { config, updateField, error: saveError } = useApiConfig()
+  useTheme(config.uiTheme)
+  const { t } = useI18n(config.uiLanguage)
   const { state: translation, toggle } = useTranslation(config)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    void save()
-  }
+  useEffect(() => {
+    document.documentElement.lang = config.uiLanguage
+  }, [config.uiLanguage])
+
+  const inactiveTitle = translation.isModelReady ? t('readyToTranslate') : t('loadingModel')
+  const inactiveDescription = translation.isModelReady
+    ? t('readyDescription')
+    : t('loadingModelDetail')
+
+  const activeTitle = translation.isLoading ? t('connecting') : t('listening')
+  const activeSubtitle = translation.isLoading ? t('connectingDescription') : t('capturingAudio')
 
   return (
-    <div className="w-80 bg-gray-900 text-white p-5 flex flex-col gap-5">
-      {/* Header */}
-      <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-sm">
-          🎙
-        </div>
-        <h1 className="font-semibold text-base">AuraLang</h1>
-        {translation.isActive && (
-          <span className="ml-auto text-xs text-red-400 animate-pulse">Live ●</span>
+    <div className="popup-shell relative flex w-80 h-[560px] flex-col overflow-x-hidden p-5">
+      <Header
+        tagline={t('tagline')}
+        onOpenSettings={() => {
+          setOpenSelect(null)
+          setSettingsOpen(true)
+        }}
+      />
+
+      <SettingsPanel
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        uiLanguage={config.uiLanguage}
+        uiTheme={config.uiTheme}
+        onLanguageChange={(lang: UiLanguage) => updateField('uiLanguage', lang)}
+        onThemeChange={(theme: UiTheme) => updateField('uiTheme', theme)}
+        t={t}
+      />
+
+      <div className="flex flex-1 flex-col justify-center gap-4">
+        {!translation.isActive ? (
+          <>
+            <StatusHero title={inactiveTitle} description={inactiveDescription} />
+
+            <div className="flex flex-col gap-3">
+              <LanguageSelect
+                label={t('sourceLanguage')}
+                value={config.sourceLanguage}
+                uiLanguage={config.uiLanguage}
+                searchPlaceholder={t('searchLanguage')}
+                noResultsText={t('noResults')}
+                isOpen={openSelect === 'source'}
+                onOpenChange={(open) => setOpenSelect(open ? 'source' : null)}
+                onChange={(value) => updateField('sourceLanguage', value)}
+              />
+              <LanguageSelect
+                label={t('targetLanguage')}
+                value={config.targetLanguage}
+                uiLanguage={config.uiLanguage}
+                searchPlaceholder={t('searchLanguage')}
+                noResultsText={t('noResults')}
+                isOpen={openSelect === 'target'}
+                onOpenChange={(open) => setOpenSelect(open ? 'target' : null)}
+                onChange={(value) => updateField('targetLanguage', value)}
+                placement="top"
+              />
+            </div>
+
+            <PrimaryButton
+              icon={<PlayIcon />}
+              onClick={toggle}
+              disabled={!translation.isModelReady || translation.isLoading}
+            >
+              {translation.isLoading ? t('connecting') : t('startTranslation')}
+            </PrimaryButton>
+          </>
+        ) : (
+          <>
+            <WaveformIndicator title={activeTitle} subtitle={activeSubtitle} intense />
+            <PrimaryButton
+              icon={<StopIcon />}
+              onClick={toggle}
+              variant="ghost"
+              disabled={translation.isLoading}
+            >
+              {translation.isLoading ? t('connecting') : t('stop')}
+            </PrimaryButton>
+          </>
         )}
-        {!translation.isActive && translation.isModelReady && (
-          <span className="ml-auto text-xs text-green-400">Model ready ✓</span>
-        )}
-        {!translation.isModelReady && (
-          <span className="ml-auto text-xs text-yellow-400 animate-pulse">Loading model…</span>
-        )}
-      </div>
-
-      {/* Language selector */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-            Audio language
-          </label>
-          <select
-            value={config.sourceLanguage}
-            onChange={(e) => updateField('sourceLanguage', e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
-          >
-            {LANGUAGES.map((l) => (
-              <option key={l.code} value={l.code}>{l.label}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-            Translate to
-          </label>
-          <select
-            value={config.targetLanguage}
-            onChange={(e) => updateField('targetLanguage', e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
-          >
-            {LANGUAGES.map((l) => (
-              <option key={l.code} value={l.code}>{l.label}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <StatusBadge isSaving={isSaving} isSaved={isSaved} error={saveError} />
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="ml-auto bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
-          >
-            Save
-          </button>
-        </div>
-      </form>
-
-      {/* Translation toggle */}
-      <div className="border-t border-gray-800 pt-4 flex flex-col gap-2">
-        <button
-          onClick={toggle}
-          disabled={!translation.isModelReady || translation.isLoading}
-          className={`w-full text-sm font-medium py-2 rounded-md transition-colors ${
-            translation.isActive
-              ? 'bg-red-600 hover:bg-red-500 text-white'
-              : 'bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white'
-          }`}
-        >
-          {translation.isLoading
-            ? 'Connecting…'
-            : translation.isActive
-              ? 'Stop Translation'
-              : 'Start Translation'}
-        </button>
 
         {translation.error && (
-          <p className="text-xs text-red-400 text-center">{translation.error}</p>
+          <p className="text-center text-caption text-red-400">{translation.error}</p>
         )}
 
-        {!translation.isModelReady && (
-          <p className="text-center text-xs text-gray-600">
-            Downloading Whisper model (~75MB)…
-          </p>
+        {saveError && (
+          <p className="text-center text-caption text-red-400">{t('saveError')}</p>
         )}
       </div>
+
+      <Footer label={t('tabAudioOnly')} />
     </div>
   )
 }

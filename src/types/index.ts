@@ -1,6 +1,11 @@
+export type UiLanguage = 'en' | 'es'
+export type UiTheme = 'dark' | 'light'
+
 export interface UserConfig {
   targetLanguage: string
   sourceLanguage: string
+  uiLanguage: UiLanguage
+  uiTheme: UiTheme
 }
 
 export interface TranslationState {

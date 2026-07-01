@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AuraLang</title>
+    <style>
+      :root {
+        --brand-purple: #6c4dff;
+        --brand-accent: #a855ff;
+        --surface-bg: #0b1020;
+        --surface-elevated: #121a2b;
+        --text-primary: #f8fafc;
+        --text-muted: #64748b;
+        --border-color: #243049;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--surface-bg);
+        color: var(--text-primary);
+        font-family: Inter, system-ui, -apple-system, sans-serif;
+      }
+
+      body {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 64px 24px;
+      }
+
+      main {
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .logo {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        margin: 0 auto 20px;
+        display: block;
+      }
+
+      h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+
+      p.subtitle {
+        font-size: 14px;
+        color: var(--text-muted);
+        margin: 0 0 32px;
+        line-height: 1.5;
+      }
+
+      .card {
+        background: var(--surface-elevated);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        text-align: left;
+      }
+
+      .card p {
+        font-size: 14px;
+        line-height: 1.6;
+        margin: 0 0 16px;
+      }
+
+      .card p:last-child {
+        margin-bottom: 0;
+      }
+
+      .step {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .step-num {
+        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: var(--brand-purple);
+        color: white;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .puzzle-hint {
+        margin-top: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .puzzle-icon {
+        color: var(--brand-accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img class="logo" src="../../icons/auralang_logo_pack/logo/logo-app-48.png" alt="AuraLang" />
+      <h1 data-i18n="title">AuraLang instalado</h1>
+      <p class="subtitle" data-i18n="subtitle">
+        Fija la extensión para acceder a la traducción en tiempo real con un clic.
+      </p>
+
+      <div class="card">
+        <div class="step">
+          <span class="step-num">1</span>
+          <p>
+            <span data-i18n="step1a">Haz clic en el icono de piezas de puzzle</span>
+            <svg class="puzzle-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: -3px; margin: 0 2px;">
+              <path d="M12 2a2 2 0 0 1 2 2v1.17a3.5 3.5 0 0 1 0 6.66V13h1.17a3.5 3.5 0 1 1 0 6h-1.17v1.83a3.5 3.5 0 1 1-6 0V19H6.83a3.5 3.5 0 1 1 0-6H8v-1.17A3.5 3.5 0 1 1 8 6.17V4a2 2 0 0 1 2-2h2Z" />
+            </svg>
+            <span data-i18n="step1b">en la barra de direcciones de Chrome.</span>
+          </p>
+        </div>
+        <div class="step" style="margin-top: 16px;">
+          <span class="step-num">2</span>
+          <p data-i18n="step2">Busca AuraLang en la lista y haz clic en la chincheta para fijarlo.</p>
+        </div>
+      </div>
+
+      <p class="puzzle-hint" data-i18n="hint">↑ Está arriba a la derecha, junto a la barra de búsqueda.</p>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
