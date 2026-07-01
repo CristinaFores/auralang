@@ -1,17 +1,7 @@
 import { useApiConfig } from './hooks/useApiConfig'
 import { useTranslation } from './hooks/useTranslation'
 import { StatusBadge } from './components/StatusBadge'
-
-const LANGUAGES = [
-  { code: 'es', label: 'Spanish' },
-  { code: 'en', label: 'English' },
-  { code: 'fr', label: 'French' },
-  { code: 'de', label: 'German' },
-  { code: 'pt', label: 'Portuguese' },
-  { code: 'it', label: 'Italian' },
-  { code: 'ja', label: 'Japanese' },
-  { code: 'zh', label: 'Chinese' },
-]
+import { LANGUAGES } from '../constants/languages'
 
 export default function App() {
   const { config, isSaving, isSaved, error: saveError, updateField, save } = useApiConfig()

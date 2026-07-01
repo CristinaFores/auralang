@@ -1,13 +1,4 @@
-const LOCALE_MAP: Record<string, string> = {
-  es: 'es-ES',
-  en: 'en-US',
-  fr: 'fr-FR',
-  de: 'de-DE',
-  pt: 'pt-BR',
-  it: 'it-IT',
-  ja: 'ja-JP',
-  zh: 'zh-CN',
-}
+import { LOCALE_MAP } from '../constants/languages'
 
 let speaking = false
 let pendingText: string | null = null
