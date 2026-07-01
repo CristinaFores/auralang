@@ -46,7 +46,7 @@ chrome.runtime.onMessage.addListener(
           }
           startCapture({
             streamId,
-            config: message.payload as StartCapturePayload['config'],
+            targetLanguage: (message.payload as { targetLanguage?: string })?.targetLanguage ?? 'es',
           })
             .then(() => sendResponse({ success: true }))
             .catch((err: unknown) => {

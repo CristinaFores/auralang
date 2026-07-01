@@ -1,12 +1,11 @@
-export interface ApiConfig {
-  openaiKey: string
-  whisperModel: 'whisper-1'
+export interface UserConfig {
   targetLanguage: string
 }
 
 export interface TranslationState {
   isActive: boolean
   isLoading: boolean
+  isModelReady: boolean
   error: string | null
 }
 
@@ -15,6 +14,7 @@ export type MessageType =
   | 'STOP_CAPTURE'
   | 'AUDIO_CHUNK'
   | 'TRANSLATION_RESULT'
+  | 'MODEL_READY'
   | 'ERROR'
 
 export interface ExtensionMessage {
@@ -24,7 +24,7 @@ export interface ExtensionMessage {
 
 export interface StartCapturePayload {
   streamId: string
-  config: ApiConfig
+  targetLanguage: string
 }
 
 export interface TranslationResultPayload {
