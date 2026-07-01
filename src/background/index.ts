@@ -2,6 +2,10 @@ import type { ExtensionMessage, StartCapturePayload } from '../types'
 
 const OFFSCREEN_URL = chrome.runtime.getURL('src/offscreen/index.html')
 
+// Create offscreen document immediately so Whisper model starts loading
+chrome.runtime.onInstalled.addListener(() => void ensureOffscreenDocument())
+chrome.runtime.onStartup.addListener(() => void ensureOffscreenDocument())
+
 async function ensureOffscreenDocument(): Promise<void> {
   const contexts = await chrome.runtime.getContexts({
     contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
