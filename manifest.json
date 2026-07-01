@@ -7,19 +7,22 @@
     "tabCapture",
     "offscreen",
     "storage",
-    "activeTab"
+    "activeTab",
+    "sidePanel"
   ],
   "background": {
     "service_worker": "src/background/index.ts",
     "type": "module"
   },
   "action": {
-    "default_popup": "src/popup/index.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
+  },
+  "side_panel": {
+    "default_path": "src/popup/index.html"
   },
   "icons": {
     "16": "icons/icon16.png",

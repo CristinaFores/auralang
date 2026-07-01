@@ -6,6 +6,12 @@ const CAPTURE_STATE_KEY = 'auralang_capture_active'
 let captureActive = false
 let capturedTabId: number | null = null
 
+// Open the side panel on icon click instead of a popup — the popup closes on
+// any focus loss (clicking the video, switching tabs), which made it useless
+// for watching live captions while actually watching the tab. The side panel
+// stays open until the user closes it.
+void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+
 // Create offscreen document immediately so Whisper model starts loading
 chrome.runtime.onInstalled.addListener((details) => {
   void ensureOffscreenDocument()
