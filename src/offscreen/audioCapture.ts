@@ -10,24 +10,9 @@ const CHUNK_INTERVAL_MS = 4000
 const WHISPER_SAMPLE_RATE = 16000
 const SAMPLES_PER_CHUNK = WHISPER_SAMPLE_RATE * (CHUNK_INTERVAL_MS / 1000)
 
-const CAPTURE_WORKLET = `
-class CaptureProcessor extends AudioWorkletProcessor {
-  process(inputs) {
-    const input = inputs[0]
-    if (!input?.[0]) return true
-    const left = input[0]
-    const right = input[1] ?? left
-    const mono = new Float32Array(left.length)
-    for (let i = 0; i < left.length; i++) mono[i] = (left[i] + right[i]) / 2
-    this.port.postMessage(mono)
-    return true
-  }
-}
-registerProcessor('capture-processor', CaptureProcessor)
-`
+const WORKLET_URL = chrome.runtime.getURL('capture-worklet.js')
 
 let captureNode: AudioWorkletNode | null = null
-let workletUrl: string | null = null
 let audioContext: AudioContext | null = null
 let pendingSamples: Float32Array[] = []
 let pendingLength = 0
@@ -78,10 +63,7 @@ export async function startAudioCapture(
   source.connect(gain)
   gain.connect(audioContext.destination)
 
-  workletUrl = URL.createObjectURL(
-    new Blob([CAPTURE_WORKLET], { type: 'application/javascript' }),
-  )
-  await audioContext.audioWorklet.addModule(workletUrl)
+  await audioContext.audioWorklet.addModule(WORKLET_URL)
 
   captureNode = new AudioWorkletNode(audioContext, 'capture-processor')
   captureNode.port.onmessage = (event: MessageEvent<Float32Array>) => {
@@ -100,11 +82,6 @@ export function stopAudioCapture(): void {
   captureNode = null
   pendingSamples = []
   pendingLength = 0
-
-  if (workletUrl) {
-    URL.revokeObjectURL(workletUrl)
-    workletUrl = null
-  }
 
   if (audioContext) {
     void audioContext.close()
