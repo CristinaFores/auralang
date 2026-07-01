@@ -1,10 +1,25 @@
 import type { ExtensionMessage, StartCapturePayload } from '../types'
 
 const OFFSCREEN_URL = chrome.runtime.getURL('src/offscreen/index.html')
+const CAPTURE_STATE_KEY = 'auralang_capture_active'
+
+let captureActive = false
 
 // Create offscreen document immediately so Whisper model starts loading
 chrome.runtime.onInstalled.addListener(() => void ensureOffscreenDocument())
 chrome.runtime.onStartup.addListener(() => void ensureOffscreenDocument())
+
+async function setCaptureActive(active: boolean): Promise<void> {
+  captureActive = active
+  await chrome.storage.session.set({ [CAPTURE_STATE_KEY]: active })
+}
+
+async function getCaptureActive(): Promise<boolean> {
+  if (captureActive) return true
+  const stored = await chrome.storage.session.get(CAPTURE_STATE_KEY)
+  captureActive = stored[CAPTURE_STATE_KEY] === true
+  return captureActive
+}
 
 async function ensureOffscreenDocument(): Promise<void> {
   const contexts = await chrome.runtime.getContexts({
@@ -25,6 +40,7 @@ async function startCapture(payload: StartCapturePayload): Promise<void> {
     type: 'BEGIN_STREAM',
     payload,
   })
+  await setCaptureActive(true)
 }
 
 async function stopCapture(): Promise<void> {
@@ -35,6 +51,7 @@ async function stopCapture(): Promise<void> {
     // Keep offscreen alive so the model stays in memory
     await chrome.runtime.sendMessage<ExtensionMessage>({ type: 'END_STREAM' })
   }
+  await setCaptureActive(false)
 }
 
 chrome.runtime.onMessage.addListener(
@@ -76,6 +93,11 @@ chrome.runtime.onMessage.addListener(
           const msg = err instanceof Error ? err.message : 'Unknown error'
           sendResponse({ success: false, error: msg })
         })
+      return true
+    }
+
+    if (message.type === 'GET_CAPTURE_STATE') {
+      void getCaptureActive().then((active) => sendResponse({ active }))
       return true
     }
   },

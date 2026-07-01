@@ -18,6 +18,7 @@ export type MessageType =
   | 'AUDIO_CHUNK'
   | 'TRANSLATION_RESULT'
   | 'MODEL_READY'
+  | 'GET_CAPTURE_STATE'
   | 'ERROR'
 
 export interface ExtensionMessage {

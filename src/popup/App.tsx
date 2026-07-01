@@ -30,7 +30,10 @@ export default function App() {
           🎙
         </div>
         <h1 className="font-semibold text-base">AuraLang</h1>
-        {translation.isModelReady && (
+        {translation.isActive && (
+          <span className="ml-auto text-xs text-red-400 animate-pulse">Live ●</span>
+        )}
+        {!translation.isActive && translation.isModelReady && (
           <span className="ml-auto text-xs text-green-400">Model ready ✓</span>
         )}
         {!translation.isModelReady && (

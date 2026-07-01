@@ -15,6 +15,16 @@ export function useTranslation(config: Pick<UserConfig, 'targetLanguage' | 'sour
   })
 
   useEffect(() => {
+    chrome.runtime.sendMessage<ExtensionMessage>(
+      { type: 'GET_CAPTURE_STATE' },
+      (response: { active?: boolean } | undefined) => {
+        if (chrome.runtime.lastError) return
+        if (response?.active) {
+          setState((prev) => ({ ...prev, isActive: true }))
+        }
+      },
+    )
+
     // Check if model is already ready (popup opened after model loaded)
     chrome.runtime.sendMessage<ExtensionMessage>(
       { type: 'MODEL_READY' },
