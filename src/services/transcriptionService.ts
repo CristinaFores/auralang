@@ -1,9 +1,9 @@
 import { pipeline, env, type AutomaticSpeechRecognitionPipeline } from '@huggingface/transformers'
 
 // Force local WASM — MV3 blocks external CDN scripts
-// Force local WASM runtime — MV3 blocks loading scripts from external CDNs
+// Point to public/ files copied at build time — MV3 blocks external CDN scripts
 if (env.backends.onnx.wasm) {
-  env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL('assets/')
+  env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL('')
 }
 
 // whisper-tiny multilingual — ~75MB, cached after first load
