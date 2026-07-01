@@ -1,12 +1,12 @@
 import { useState, useCallback, useEffect } from 'react'
-import type { TranslationState, ExtensionMessage } from '../../types'
+import type { TranslationState, ExtensionMessage, UserConfig } from '../../types'
 
 export interface UseTranslationReturn {
   state: TranslationState
   toggle: () => void
 }
 
-export function useTranslation(): UseTranslationReturn {
+export function useTranslation(config: Pick<UserConfig, 'targetLanguage' | 'sourceLanguage'>): UseTranslationReturn {
   const [state, setState] = useState<TranslationState>({
     isActive: false,
     isLoading: false,
@@ -46,7 +46,15 @@ export function useTranslation(): UseTranslationReturn {
     const type: ExtensionMessage['type'] = state.isActive ? 'STOP_CAPTURE' : 'START_CAPTURE'
 
     chrome.runtime.sendMessage<ExtensionMessage>(
-      { type },
+      {
+        type,
+        payload: state.isActive
+          ? undefined
+          : {
+              targetLanguage: config.targetLanguage,
+              sourceLanguage: config.sourceLanguage,
+            },
+      },
       (response: { success: boolean; error?: string }) => {
         if (chrome.runtime.lastError || !response?.success) {
           setState((prev) => ({
@@ -63,7 +71,7 @@ export function useTranslation(): UseTranslationReturn {
         }))
       },
     )
-  }, [state.isActive])
+  }, [state.isActive, config.targetLanguage, config.sourceLanguage])
 
   return { state, toggle }
 }

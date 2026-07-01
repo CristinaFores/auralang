@@ -5,6 +5,7 @@ const STORAGE_KEY = 'auralang_config'
 
 const DEFAULT_CONFIG: UserConfig = {
   targetLanguage: 'es',
+  sourceLanguage: 'en',
 }
 
 interface UseUserConfigReturn {

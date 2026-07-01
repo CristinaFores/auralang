@@ -25,13 +25,13 @@ getTranscriber()
 chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse) => {
     if (message.type === 'BEGIN_STREAM') {
-      const { streamId, targetLanguage } = message.payload as StartCapturePayload
-      console.log('[AuraLang] BEGIN_STREAM received — streamId:', streamId, 'lang:', targetLanguage)
+      const { streamId, targetLanguage, sourceLanguage } = message.payload as StartCapturePayload
+      console.log('[AuraLang] BEGIN_STREAM received — streamId:', streamId, 'from:', sourceLanguage, 'to:', targetLanguage)
 
       startAudioCapture(streamId, {
         onChunk: (samples) => {
           console.log('[AuraLang] Audio chunk received, samples:', samples.length)
-          processAudioChunk(samples, targetLanguage).catch((err: unknown) => {
+          processAudioChunk(samples, targetLanguage, sourceLanguage).catch((err: unknown) => {
             const msg = err instanceof Error ? err.message : 'Pipeline error'
             console.error('[AuraLang] Pipeline error:', msg)
             void chrome.runtime.sendMessage<ExtensionMessage>({

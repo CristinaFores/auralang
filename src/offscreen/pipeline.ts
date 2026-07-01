@@ -2,9 +2,13 @@ import { transcribeAudio } from '../services/transcriptionService'
 import { translateText } from '../services/translationService'
 import { speak } from '../services/ttsService'
 
-export async function processAudioChunk(samples: Float32Array, targetLang: string): Promise<void> {
+export async function processAudioChunk(
+  samples: Float32Array,
+  targetLang: string,
+  sourceLang: string,
+): Promise<void> {
   console.log('[AuraLang] Transcribing chunk...')
-  const transcription = await transcribeAudio(samples)
+  const transcription = await transcribeAudio(samples, sourceLang)
   console.log('[AuraLang] Transcription:', transcription)
   if (!transcription) return
 

@@ -1,5 +1,6 @@
 export interface UserConfig {
   targetLanguage: string
+  sourceLanguage: string
 }
 
 export interface TranslationState {
@@ -27,6 +28,7 @@ export interface ExtensionMessage {
 export interface StartCapturePayload {
   streamId: string
   targetLanguage: string
+  sourceLanguage: string
 }
 
 export interface TranslationResultPayload {

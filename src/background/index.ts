@@ -41,6 +41,7 @@ chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse) => {
     if (message.type === 'START_CAPTURE') {
       const targetLanguage = (message.payload as { targetLanguage?: string })?.targetLanguage ?? 'es'
+      const sourceLanguage = (message.payload as { sourceLanguage?: string })?.sourceLanguage ?? 'en'
 
       // targetTabId = tab to capture; omit consumerTabId so offscreen can redeem the streamId (Chrome 116+)
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -56,7 +57,7 @@ chrome.runtime.onMessage.addListener(
               sendResponse({ success: false, error: chrome.runtime.lastError?.message ?? 'No stream ID' })
               return
             }
-            startCapture({ streamId, targetLanguage })
+            startCapture({ streamId, targetLanguage, sourceLanguage })
               .then(() => sendResponse({ success: true }))
               .catch((err: unknown) => {
                 const msg = err instanceof Error ? err.message : 'Unknown error'

@@ -15,7 +15,7 @@ const LANGUAGES = [
 
 export default function App() {
   const { config, isSaving, isSaved, error: saveError, updateField, save } = useApiConfig()
-  const { state: translation, toggle } = useTranslation()
+  const { state: translation, toggle } = useTranslation(config)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,6 +40,21 @@ export default function App() {
 
       {/* Language selector */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+            Audio language
+          </label>
+          <select
+            value={config.sourceLanguage}
+            onChange={(e) => updateField('sourceLanguage', e.target.value)}
+            className="bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+          >
+            {LANGUAGES.map((l) => (
+              <option key={l.code} value={l.code}>{l.label}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
             Translate to

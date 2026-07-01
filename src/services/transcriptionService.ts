@@ -23,10 +23,14 @@ export async function getTranscriber(): Promise<AutomaticSpeechRecognitionPipeli
   return transcriber
 }
 
-export async function transcribeAudio(samples: Float32Array): Promise<string> {
+export async function transcribeAudio(
+  samples: Float32Array,
+  sourceLanguage: string,
+): Promise<string> {
   const asr = await getTranscriber()
 
   const result = await asr(samples, {
+    language: sourceLanguage,
     task: 'transcribe',
   })
 
