@@ -1,12 +1,11 @@
-import type { ExtensionMessage } from '../types'
+import type { ExtensionMessage, StartCapturePayload } from '../types'
 
-const OFFSCREEN_URL = 'src/offscreen/index.html'
+const OFFSCREEN_URL = chrome.runtime.getURL('src/offscreen/index.html')
 
 async function ensureOffscreenDocument(): Promise<void> {
   const contexts = await chrome.runtime.getContexts({
     contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
   })
-
   if (contexts.length === 0) {
     await chrome.offscreen.createDocument({
       url: OFFSCREEN_URL,
@@ -16,16 +15,56 @@ async function ensureOffscreenDocument(): Promise<void> {
   }
 }
 
+async function startCapture(payload: StartCapturePayload): Promise<void> {
+  await ensureOffscreenDocument()
+  await chrome.runtime.sendMessage<ExtensionMessage>({
+    type: 'START_CAPTURE',
+    payload,
+  })
+}
+
+async function stopCapture(): Promise<void> {
+  const contexts = await chrome.runtime.getContexts({
+    contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
+  })
+  if (contexts.length > 0) {
+    await chrome.runtime.sendMessage<ExtensionMessage>({ type: 'STOP_CAPTURE' })
+    await chrome.offscreen.closeDocument()
+  }
+}
+
 chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse) => {
     if (message.type === 'START_CAPTURE') {
-      ensureOffscreenDocument()
+      chrome.tabCapture.getMediaStreamId(
+        { consumerTabId: undefined },
+        (streamId) => {
+          if (chrome.runtime.lastError || !streamId) {
+            sendResponse({ success: false, error: chrome.runtime.lastError?.message })
+            return
+          }
+          startCapture({
+            streamId,
+            config: message.payload as StartCapturePayload['config'],
+          })
+            .then(() => sendResponse({ success: true }))
+            .catch((err: unknown) => {
+              const msg = err instanceof Error ? err.message : 'Unknown error'
+              sendResponse({ success: false, error: msg })
+            })
+        },
+      )
+      return true
+    }
+
+    if (message.type === 'STOP_CAPTURE') {
+      stopCapture()
         .then(() => sendResponse({ success: true }))
         .catch((err: unknown) => {
           const msg = err instanceof Error ? err.message : 'Unknown error'
           sendResponse({ success: false, error: msg })
         })
-      return true // keep channel open for async response
+      return true
     }
   },
 )
