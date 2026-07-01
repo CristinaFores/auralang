@@ -10,16 +10,53 @@ const CHUNK_INTERVAL_MS = 4000
 const WHISPER_SAMPLE_RATE = 16000
 const SAMPLES_PER_CHUNK = WHISPER_SAMPLE_RATE * (CHUNK_INTERVAL_MS / 1000)
 
-let scriptProcessor: ScriptProcessorNode | null = null
+const CAPTURE_WORKLET = `
+class CaptureProcessor extends AudioWorkletProcessor {
+  process(inputs) {
+    const input = inputs[0]
+    if (!input?.[0]) return true
+    const left = input[0]
+    const right = input[1] ?? left
+    const mono = new Float32Array(left.length)
+    for (let i = 0; i < left.length; i++) mono[i] = (left[i] + right[i]) / 2
+    this.port.postMessage(mono)
+    return true
+  }
+}
+registerProcessor('capture-processor', CaptureProcessor)
+`
+
+let captureNode: AudioWorkletNode | null = null
+let workletUrl: string | null = null
 let audioContext: AudioContext | null = null
 let pendingSamples: Float32Array[] = []
 let pendingLength = 0
+
+function pushSamples(samples: Float32Array, handlers: AudioCaptureHandlers): void {
+  pendingSamples.push(samples)
+  pendingLength += samples.length
+
+  while (pendingLength >= SAMPLES_PER_CHUNK) {
+    const chunk = new Float32Array(SAMPLES_PER_CHUNK)
+    let offset = 0
+    while (offset < SAMPLES_PER_CHUNK) {
+      const head = pendingSamples[0]
+      const take = Math.min(head.length, SAMPLES_PER_CHUNK - offset)
+      chunk.set(head.subarray(0, take), offset)
+      offset += take
+      if (take === head.length) pendingSamples.shift()
+      else pendingSamples[0] = head.subarray(take)
+    }
+    pendingLength -= SAMPLES_PER_CHUNK
+    handlers.onChunk(chunk)
+  }
+}
 
 export async function startAudioCapture(
   streamId: string,
   handlers: AudioCaptureHandlers,
 ): Promise<void> {
-  if (scriptProcessor) return // already running
+  if (captureNode) return // already running
 
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
@@ -41,49 +78,33 @@ export async function startAudioCapture(
   source.connect(gain)
   gain.connect(audioContext.destination)
 
-  scriptProcessor = audioContext.createScriptProcessor(4096, 2, 1)
-  scriptProcessor.onaudioprocess = (event) => {
-    const left = event.inputBuffer.getChannelData(0)
-    const right =
-      event.inputBuffer.numberOfChannels > 1
-        ? event.inputBuffer.getChannelData(1)
-        : left
-    const mono = new Float32Array(left.length)
-    for (let i = 0; i < left.length; i++) {
-      mono[i] = (left[i] + right[i]) / 2
-    }
+  workletUrl = URL.createObjectURL(
+    new Blob([CAPTURE_WORKLET], { type: 'application/javascript' }),
+  )
+  await audioContext.audioWorklet.addModule(workletUrl)
 
-    pendingSamples.push(mono)
-    pendingLength += mono.length
-
-    while (pendingLength >= SAMPLES_PER_CHUNK) {
-      const chunk = new Float32Array(SAMPLES_PER_CHUNK)
-      let offset = 0
-      while (offset < SAMPLES_PER_CHUNK) {
-        const head = pendingSamples[0]
-        const take = Math.min(head.length, SAMPLES_PER_CHUNK - offset)
-        chunk.set(head.subarray(0, take), offset)
-        offset += take
-        if (take === head.length) pendingSamples.shift()
-        else pendingSamples[0] = head.subarray(take)
-      }
-      pendingLength -= SAMPLES_PER_CHUNK
-      handlers.onChunk(chunk)
-    }
+  captureNode = new AudioWorkletNode(audioContext, 'capture-processor')
+  captureNode.port.onmessage = (event: MessageEvent<Float32Array>) => {
+    pushSamples(event.data, handlers)
   }
 
-  source.connect(scriptProcessor)
-  scriptProcessor.connect(audioContext.destination)
+  source.connect(captureNode)
+  captureNode.connect(audioContext.destination)
 }
 
 export function stopAudioCapture(): void {
-  if (scriptProcessor) {
-    scriptProcessor.disconnect()
-    scriptProcessor.onaudioprocess = null
+  if (captureNode) {
+    captureNode.port.onmessage = null
+    captureNode.disconnect()
   }
-  scriptProcessor = null
+  captureNode = null
   pendingSamples = []
   pendingLength = 0
+
+  if (workletUrl) {
+    URL.revokeObjectURL(workletUrl)
+    workletUrl = null
+  }
 
   if (audioContext) {
     void audioContext.close()
