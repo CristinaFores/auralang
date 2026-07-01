@@ -41,24 +41,31 @@ chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse) => {
     if (message.type === 'START_CAPTURE') {
       // consumerTabId must be the offscreen document's tab — omitting it uses the calling context
-      chrome.tabCapture.getMediaStreamId(
-        {},
-        (streamId) => {
-          if (chrome.runtime.lastError || !streamId) {
-            sendResponse({ success: false, error: chrome.runtime.lastError?.message })
-            return
-          }
-          startCapture({
-            streamId,
-            targetLanguage: (message.payload as { targetLanguage?: string })?.targetLanguage ?? 'es',
-          })
-            .then(() => sendResponse({ success: true }))
-            .catch((err: unknown) => {
-              const msg = err instanceof Error ? err.message : 'Unknown error'
-              sendResponse({ success: false, error: msg })
-            })
-        },
-      )
+      const targetLanguage = (message.payload as { targetLanguage?: string })?.targetLanguage ?? 'es'
+
+      // tabCapture.getMediaStreamId must be called from the action handler context
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const tabId = tabs[0]?.id
+        if (!tabId) {
+          sendResponse({ success: false, error: 'No active tab found' })
+          return
+        }
+        chrome.tabCapture.getMediaStreamId(
+          { consumerTabId: tabId, targetTabId: tabId },
+          (streamId) => {
+            if (chrome.runtime.lastError || !streamId) {
+              sendResponse({ success: false, error: chrome.runtime.lastError?.message ?? 'No stream ID' })
+              return
+            }
+            startCapture({ streamId, targetLanguage })
+              .then(() => sendResponse({ success: true }))
+              .catch((err: unknown) => {
+                const msg = err instanceof Error ? err.message : 'Unknown error'
+                sendResponse({ success: false, error: msg })
+              })
+          },
+        )
+      })
       return true
     }
 
