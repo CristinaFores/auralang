@@ -22,7 +22,7 @@ async function ensureOffscreenDocument(): Promise<void> {
 async function startCapture(payload: StartCapturePayload): Promise<void> {
   await ensureOffscreenDocument()
   await chrome.runtime.sendMessage<ExtensionMessage>({
-    type: 'START_CAPTURE',
+    type: 'BEGIN_STREAM',
     payload,
   })
 }
@@ -32,7 +32,7 @@ async function stopCapture(): Promise<void> {
     contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
   })
   if (contexts.length > 0) {
-    await chrome.runtime.sendMessage<ExtensionMessage>({ type: 'STOP_CAPTURE' })
+    await chrome.runtime.sendMessage<ExtensionMessage>({ type: 'END_STREAM' })
     await chrome.offscreen.closeDocument()
   }
 }

@@ -10,8 +10,10 @@ export interface TranslationState {
 }
 
 export type MessageType =
-  | 'START_CAPTURE'
-  | 'STOP_CAPTURE'
+  | 'START_CAPTURE'       // popup → background
+  | 'STOP_CAPTURE'        // popup → background
+  | 'BEGIN_STREAM'        // background → offscreen (includes streamId)
+  | 'END_STREAM'          // background → offscreen
   | 'AUDIO_CHUNK'
   | 'TRANSLATION_RESULT'
   | 'MODEL_READY'

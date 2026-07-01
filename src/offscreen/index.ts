@@ -18,7 +18,7 @@ getTranscriber()
 
 chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse) => {
-    if (message.type === 'START_CAPTURE') {
+    if (message.type === 'BEGIN_STREAM') {
       const { streamId, targetLanguage } = message.payload as StartCapturePayload
 
       startAudioCapture(streamId, {
@@ -47,7 +47,7 @@ chrome.runtime.onMessage.addListener(
       return true
     }
 
-    if (message.type === 'STOP_CAPTURE') {
+    if (message.type === 'END_STREAM') {
       stopAudioCapture()
       sendResponse({ success: true })
     }
