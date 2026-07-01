@@ -70,7 +70,7 @@ export default function App() {
         }}
       />
 
-      <div className="popup-shell relative flex w-80 h-[560px] flex-col overflow-x-hidden p-5">
+      <div className="popup-shell relative flex min-h-screen w-full flex-col overflow-x-hidden p-5">
         <Header
           tagline={t('tagline')}
           settingsAriaLabel={t('settings.openAriaLabel')}
@@ -92,7 +92,7 @@ export default function App() {
           t={t}
         />
 
-        <div className="flex flex-1 flex-col justify-center gap-4">
+        <div className="flex flex-1 flex-col gap-4 pt-4">
           {!translation.isActive ? (
             <>
               <StatusHero
