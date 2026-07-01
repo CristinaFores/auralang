@@ -1,4 +1,10 @@
-import { pipeline, type AutomaticSpeechRecognitionPipeline } from '@huggingface/transformers'
+import { pipeline, env, type AutomaticSpeechRecognitionPipeline } from '@huggingface/transformers'
+
+// Force local WASM — MV3 blocks external CDN scripts
+// Force local WASM runtime — MV3 blocks loading scripts from external CDNs
+if (env.backends.onnx.wasm) {
+  env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL('assets/')
+}
 
 // whisper-tiny multilingual — ~75MB, cached after first load
 const MODEL_ID = 'onnx-community/whisper-tiny'
