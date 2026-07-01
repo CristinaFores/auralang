@@ -26,7 +26,12 @@ chrome.runtime.onMessage.addListener(
 
       startAudioCapture(streamId, {
         onChunk: (samples) => {
-          processAudioChunk(samples, targetLanguage, sourceLanguage).catch((err: unknown) => {
+          processAudioChunk(samples, targetLanguage, sourceLanguage, (update) => {
+            void chrome.runtime.sendMessage<ExtensionMessage>({
+              type: 'TRANSCRIPT_UPDATE',
+              payload: update,
+            })
+          }).catch((err: unknown) => {
             const msg = err instanceof Error ? err.message : 'Pipeline error'
             console.error('[AuraLang] Pipeline error:', msg)
             void chrome.runtime.sendMessage<ExtensionMessage>({
