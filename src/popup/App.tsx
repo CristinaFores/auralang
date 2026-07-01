@@ -72,6 +72,7 @@ export default function App() {
       <div className="popup-shell relative flex w-80 h-[560px] flex-col overflow-x-hidden p-5">
         <Header
           tagline={t('tagline')}
+          settingsAriaLabel={t('settings.openAriaLabel')}
           onOpenSettings={() => {
             setOpenSelect(null)
             setSettingsOpen(true)
@@ -83,6 +84,8 @@ export default function App() {
           onClose={() => setSettingsOpen(false)}
           uiLanguage={config.uiLanguage}
           uiTheme={config.uiTheme}
+          backdropCloseAriaLabel={t('settings.backdropAriaLabel')}
+          closeAriaLabel={t('settings.closeAriaLabel')}
           onLanguageChange={(lang: UiLanguage) => updateField('uiLanguage', lang)}
           onThemeChange={(theme: UiTheme) => updateField('uiTheme', theme)}
           t={t}

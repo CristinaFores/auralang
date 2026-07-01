@@ -7,8 +7,7 @@
     "tabCapture",
     "offscreen",
     "storage",
-    "activeTab",
-    "tabs"
+    "activeTab"
   ],
   "background": {
     "service_worker": "src/background/index.ts",

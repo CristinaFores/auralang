@@ -82,23 +82,21 @@ The project follows the conventions in [AGENTS.md](./AGENTS.md). Current status:
 | Architecture | ✅ | Services isolated; typed messages in `src/types/` |
 | i18n | ✅ | `en` / `es` locale files; no hardcoded UI copy |
 | Accessibility | 🟡 | Semantic markup in popup; manual audit pending |
-| ESLint | ❌ | Not configured yet |
-| Unit tests (Jest + RTL) | ❌ | Not configured yet |
-| MSW for HTTP | ❌ | Add when testing `translationService` |
-| CI (GitHub Actions) | ❌ | Not configured yet |
+| ESLint | ✅ | Flat config with TS + React Hooks |
+| Unit tests (Jest + RTL) | 🟡 | Initial coverage for `useApiConfig` and `translationService` |
+| MSW for HTTP | ✅ | `translationService` test uses MSW |
+| CI (GitHub Actions) | ✅ | `type-check`, `lint`, `test`, `build` on push/PR |
 
 ### How to reach full compliance
 
-1. **Lint** — add ESLint + `eslint-plugin-react-hooks` and a `npm run lint` script. Gate PRs on zero warnings.
-2. **Tests** — add Jest + React Testing Library + MSW. Structure specs with Given-When-Then. Start with popup hooks and `translationService`; mock `chrome.storage` for settings.
-3. **CI** — GitHub Actions workflow running `type-check`, `lint`, `test`, and `build` on every push/PR.
-4. **Accessibility pass** — keyboard navigation, focus rings, `aria-label` on icon buttons, error states not by color alone.
-5. **Pre-delivery gate** — before release, all of these must pass:
+1. **Expand test coverage** — add cases for `useTranslation`, background/offscreen message flow, and popup user flows.
+2. **Accessibility pass** — keyboard navigation, focus rings, and contrast review in both themes.
+3. **Pre-delivery gate** — before release, all of these must pass:
 
 ```bash
 npm run type-check
-npm run lint      # once added
-npm run test      # once added
+npm run lint
+npm run test
 npm run build
 ```
 
