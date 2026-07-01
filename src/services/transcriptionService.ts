@@ -8,7 +8,7 @@ if (env.backends.onnx.wasm) {
   env.backends.onnx.wasm.numThreads = 1
 }
 
-// whisper-tiny multilingual — ~75MB, cached after first load
+// whisper-tiny multilingual — ~150MB (fp32), cached after first load
 const MODEL_ID = 'onnx-community/whisper-tiny'
 
 let transcriber: AutomaticSpeechRecognitionPipeline | null = null
@@ -17,7 +17,7 @@ export async function getTranscriber(): Promise<AutomaticSpeechRecognitionPipeli
   if (transcriber) return transcriber
 
   transcriber = await pipeline('automatic-speech-recognition', MODEL_ID, {
-    dtype: 'q8',
+    dtype: 'fp32',
   }) as AutomaticSpeechRecognitionPipeline
 
   return transcriber
