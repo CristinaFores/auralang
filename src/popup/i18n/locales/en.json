@@ -24,5 +24,6 @@
   "loadingModelDetail": "Downloading Whisper model (~75MB)…",
   "modelReady": "Model ready",
   "live": "Live",
-  "saveError": "Failed to save settings"
+  "saveError": "Failed to save settings",
+  "captureEnded": "Translation stopped — the source tab was closed"
 }

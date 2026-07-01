@@ -45,6 +45,14 @@ export function useTranslation(config: Pick<UserConfig, 'targetLanguage' | 'sour
         const payload = message.payload as { message: string }
         setState((prev) => ({ ...prev, error: payload.message }))
       }
+      if (message.type === 'CAPTURE_ENDED') {
+        setState((prev) => ({
+          ...prev,
+          isActive: false,
+          isLoading: false,
+          error: 'captureEnded',
+        }))
+      }
     }
     chrome.runtime.onMessage.addListener(handler)
     return () => chrome.runtime.onMessage.removeListener(handler)

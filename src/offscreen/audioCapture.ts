@@ -4,6 +4,7 @@
 export interface AudioCaptureHandlers {
   onChunk: (samples: Float32Array) => void
   onError: (message: string) => void
+  onEnded: () => void
 }
 
 const CHUNK_INTERVAL_MS = 4000
@@ -52,6 +53,15 @@ export async function startAudioCapture(
       },
     },
     video: false,
+  })
+
+  // Chrome ends this track when the captured tab closes or navigates away —
+  // without this, captureNode stays alive and blocks any new capture attempt
+  // with "Cannot capture a tab with an active stream".
+  stream.getAudioTracks()[0]?.addEventListener('ended', () => {
+    if (!captureNode) return // already stopped via STOP_CAPTURE
+    stopAudioCapture()
+    handlers.onEnded()
   })
 
   // Resample to 16 kHz mono — Whisper expects raw PCM Float32Array

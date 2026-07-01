@@ -20,10 +20,9 @@ export type MessageType =
   | 'STOP_CAPTURE'        // popup → background
   | 'BEGIN_STREAM'        // background → offscreen (includes streamId)
   | 'END_STREAM'          // background → offscreen
-  | 'AUDIO_CHUNK'
-  | 'TRANSLATION_RESULT'
   | 'MODEL_READY'
   | 'GET_CAPTURE_STATE'
+  | 'CAPTURE_ENDED'       // offscreen → background/popup (source tab closed or stream lost)
   | 'ERROR'
 
 export interface ExtensionMessage {

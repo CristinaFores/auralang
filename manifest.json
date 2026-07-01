@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "AuraLang",
   "version": "0.1.0",
-  "description": "Real-time audio translation using AI — BYOK model",
+  "description": "Real-time tab audio translation — local transcription, no API key required",
   "permissions": [
     "tabCapture",
     "offscreen",

@@ -4,11 +4,15 @@ import { detectBrowserLocale } from '../i18n'
 
 const STORAGE_KEY = 'auralang_config'
 
+function detectPreferredTheme(): 'dark' | 'light' {
+  return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+}
+
 const DEFAULT_CONFIG: UserConfig = {
   targetLanguage: 'es',
   sourceLanguage: 'en',
   uiLanguage: detectBrowserLocale(),
-  uiTheme: 'dark',
+  uiTheme: detectPreferredTheme(),
 }
 
 interface UseUserConfigReturn {

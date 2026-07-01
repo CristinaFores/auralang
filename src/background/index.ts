@@ -4,6 +4,7 @@ const OFFSCREEN_URL = chrome.runtime.getURL('src/offscreen/index.html')
 const CAPTURE_STATE_KEY = 'auralang_capture_active'
 
 let captureActive = false
+let capturedTabId: number | null = null
 
 // Create offscreen document immediately so Whisper model starts loading
 chrome.runtime.onInstalled.addListener((details) => {
@@ -56,7 +57,49 @@ async function stopCapture(): Promise<void> {
     // Keep offscreen alive so the model stays in memory
     await chrome.runtime.sendMessage<ExtensionMessage>({ type: 'END_STREAM' })
   }
+  capturedTabId = null
   await setCaptureActive(false)
+}
+
+// Backup for the offscreen "stream ended" signal: if the captured tab is closed
+// outright, make sure our own state doesn't stay stuck on "active".
+chrome.tabs.onRemoved.addListener((tabId) => {
+  if (tabId === capturedTabId) void stopCapture()
+})
+
+function requestMediaStreamId(tabId: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    chrome.tabCapture.getMediaStreamId({ targetTabId: tabId }, (streamId) => {
+      if (chrome.runtime.lastError || !streamId) {
+        reject(new Error(chrome.runtime.lastError?.message ?? 'No stream ID'))
+        return
+      }
+      resolve(streamId)
+    })
+  })
+}
+
+async function beginCaptureForTab(
+  tabId: number,
+  targetLanguage: string,
+  sourceLanguage: string,
+  isRetry = false,
+): Promise<void> {
+  try {
+    const streamId = await requestMediaStreamId(tabId)
+    capturedTabId = tabId
+    await startCapture({ streamId, targetLanguage, sourceLanguage })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    // Stale session from a tab that closed without a clean STOP_CAPTURE — clear
+    // our own state and retry once before giving up.
+    if (!isRetry && msg.includes('active stream')) {
+      await stopCapture()
+      await beginCaptureForTab(tabId, targetLanguage, sourceLanguage, true)
+      return
+    }
+    throw err
+  }
 }
 
 chrome.runtime.onMessage.addListener(
@@ -72,21 +115,12 @@ chrome.runtime.onMessage.addListener(
           sendResponse({ success: false, error: 'No active tab found' })
           return
         }
-        chrome.tabCapture.getMediaStreamId(
-          { targetTabId: tabId },
-          (streamId) => {
-            if (chrome.runtime.lastError || !streamId) {
-              sendResponse({ success: false, error: chrome.runtime.lastError?.message ?? 'No stream ID' })
-              return
-            }
-            startCapture({ streamId, targetLanguage, sourceLanguage })
-              .then(() => sendResponse({ success: true }))
-              .catch((err: unknown) => {
-                const msg = err instanceof Error ? err.message : 'Unknown error'
-                sendResponse({ success: false, error: msg })
-              })
-          },
-        )
+        beginCaptureForTab(tabId, targetLanguage, sourceLanguage)
+          .then(() => sendResponse({ success: true }))
+          .catch((err: unknown) => {
+            const msg = err instanceof Error ? err.message : 'Unknown error'
+            sendResponse({ success: false, error: msg })
+          })
       })
       return true
     }
@@ -99,6 +133,11 @@ chrome.runtime.onMessage.addListener(
           sendResponse({ success: false, error: msg })
         })
       return true
+    }
+
+    if (message.type === 'CAPTURE_ENDED') {
+      void stopCapture()
+      return false
     }
 
     if (message.type === 'GET_CAPTURE_STATE') {

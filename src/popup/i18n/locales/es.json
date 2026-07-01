@@ -24,5 +24,6 @@
   "loadingModelDetail": "Descargando modelo Whisper (~75MB)…",
   "modelReady": "Modelo listo",
   "live": "En vivo",
-  "saveError": "Error al guardar ajustes"
+  "saveError": "Error al guardar ajustes",
+  "captureEnded": "Traducción detenida — se cerró la pestaña de origen"
 }

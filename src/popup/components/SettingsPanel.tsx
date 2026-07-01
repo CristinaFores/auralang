@@ -32,7 +32,7 @@ export function SettingsPanel({
         onClick={onClose}
         aria-label="Close settings"
       />
-      <div className="absolute top-14 right-0 z-20 w-full max-w-[248px] rounded-xl border border-[var(--border-color)] bg-[var(--surface-elevated)] shadow-[0_12px_32px_rgba(15,23,42,0.18)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.45)] p-4 flex flex-col gap-4">
+      <div className="absolute top-14 right-3 z-20 w-full max-w-[248px] rounded-xl border border-[var(--border-color)] bg-[var(--surface-elevated)] shadow-[0_12px_32px_rgba(15,23,42,0.18)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.45)] p-4 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h2 className="text-body font-semibold text-[var(--text-primary)]">{t('settings.title')}</h2>
           <button

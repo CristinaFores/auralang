@@ -5,12 +5,9 @@ import type { ExtensionMessage, StartCapturePayload } from '../types'
 
 let modelReady = false
 
-console.log('[AuraLang] Offscreen document started — loading Whisper model...')
-
 getTranscriber()
   .then(() => {
     modelReady = true
-    console.log('[AuraLang] Whisper model ready ✓')
     void chrome.runtime.sendMessage<ExtensionMessage>({ type: 'MODEL_READY' })
   })
   .catch((err: unknown) => {
@@ -26,11 +23,9 @@ chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse) => {
     if (message.type === 'BEGIN_STREAM') {
       const { streamId, targetLanguage, sourceLanguage } = message.payload as StartCapturePayload
-      console.log('[AuraLang] BEGIN_STREAM received — streamId:', streamId, 'from:', sourceLanguage, 'to:', targetLanguage)
 
       startAudioCapture(streamId, {
         onChunk: (samples) => {
-          console.log('[AuraLang] Audio chunk received, samples:', samples.length)
           processAudioChunk(samples, targetLanguage, sourceLanguage).catch((err: unknown) => {
             const msg = err instanceof Error ? err.message : 'Pipeline error'
             console.error('[AuraLang] Pipeline error:', msg)
@@ -47,9 +42,12 @@ chrome.runtime.onMessage.addListener(
             payload: { message: msg },
           })
         },
+        onEnded: () => {
+          resetPipelineState()
+          void chrome.runtime.sendMessage<ExtensionMessage>({ type: 'CAPTURE_ENDED' })
+        },
       })
         .then(() => {
-          console.log('[AuraLang] Audio capture started ✓')
           sendResponse({ success: true })
         })
         .catch((err: unknown) => {
@@ -67,7 +65,6 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.type === 'END_STREAM') {
-      console.log('[AuraLang] END_STREAM — stopping capture')
       stopAudioCapture()
       resetPipelineState()
       sendResponse({ success: true })

@@ -17,18 +17,13 @@ export async function processAudioChunk(
 ): Promise<void> {
   if (isSilent(samples)) return
 
-  console.log('[AuraLang] Transcribing chunk...')
   const transcription = await transcribeAudio(samples, sourceLang)
-  console.log('[AuraLang] Transcription:', transcription)
   if (!transcription || transcription === lastTranscription) return
 
   lastTranscription = transcription
 
-  console.log('[AuraLang] Translating to', targetLang, '...')
   const translation = await translateText(transcription, targetLang)
-  console.log('[AuraLang] Translation:', translation)
   if (!translation) return
 
-  console.log('[AuraLang] Speaking...')
   speak(translation, targetLang)
 }

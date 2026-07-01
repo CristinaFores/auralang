@@ -14,7 +14,7 @@ export function WaveformIndicator({ title, subtitle, intense = false }: Waveform
           intense ? 'glow-purple-intense' : 'glow-purple'
         }`}
       >
-        <WaveformBars size="lg" />
+        <WaveformBars />
       </div>
       <div className="flex flex-col gap-1">
         <h2 className="text-h2 font-semibold text-[var(--text-primary)]">{title}</h2>

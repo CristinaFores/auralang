@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
+import { Toaster } from 'react-hot-toast'
 import { useApiConfig } from './hooks/useApiConfig'
 import { useTranslation } from './hooks/useTranslation'
 import { useI18n } from './hooks/useI18n'
 import { useTheme } from './hooks/useTheme'
+import { useErrorToasts } from './hooks/useErrorToasts'
 import { Header } from './components/Header'
 import { StatusHero } from './components/StatusHero'
 import { LanguageSelect } from './components/LanguageSelect'
@@ -27,6 +29,12 @@ export default function App() {
     document.documentElement.lang = config.uiLanguage
   }, [config.uiLanguage])
 
+  useErrorToasts({
+    translationError: translation.error,
+    saveError,
+    t,
+  })
+
   const inactiveTitle = translation.isModelReady ? t('readyToTranslate') : t('loadingModel')
   const inactiveDescription = translation.isModelReady
     ? t('readyDescription')
@@ -36,86 +44,108 @@ export default function App() {
   const activeSubtitle = translation.isLoading ? t('connectingDescription') : t('capturingAudio')
 
   return (
-    <div className="popup-shell relative flex w-80 h-[560px] flex-col overflow-x-hidden p-5">
-      <Header
-        tagline={t('tagline')}
-        onOpenSettings={() => {
-          setOpenSelect(null)
-          setSettingsOpen(true)
+    <>
+      <Toaster
+        position="top-center"
+        containerStyle={{ top: 16 }}
+        toastOptions={{
+          style: {
+            maxWidth: '288px',
+            background: 'var(--surface-elevated)',
+            color: 'var(--text-primary)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            fontSize: '12px',
+            lineHeight: '1.4',
+          },
+          error: {
+            style: {
+              color: '#f87171',
+            },
+            iconTheme: {
+              primary: '#f87171',
+              secondary: 'var(--surface-elevated)',
+            },
+          },
         }}
       />
 
-      <SettingsPanel
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        uiLanguage={config.uiLanguage}
-        uiTheme={config.uiTheme}
-        onLanguageChange={(lang: UiLanguage) => updateField('uiLanguage', lang)}
-        onThemeChange={(theme: UiTheme) => updateField('uiTheme', theme)}
-        t={t}
-      />
+      <div className="popup-shell relative flex w-80 h-[560px] flex-col overflow-x-hidden p-5">
+        <Header
+          tagline={t('tagline')}
+          onOpenSettings={() => {
+            setOpenSelect(null)
+            setSettingsOpen(true)
+          }}
+        />
 
-      <div className="flex flex-1 flex-col justify-center gap-4">
-        {!translation.isActive ? (
-          <>
-            <StatusHero title={inactiveTitle} description={inactiveDescription} />
+        <SettingsPanel
+          isOpen={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          uiLanguage={config.uiLanguage}
+          uiTheme={config.uiTheme}
+          onLanguageChange={(lang: UiLanguage) => updateField('uiLanguage', lang)}
+          onThemeChange={(theme: UiTheme) => updateField('uiTheme', theme)}
+          t={t}
+        />
 
-            <div className="flex flex-col gap-3">
-              <LanguageSelect
-                label={t('sourceLanguage')}
-                value={config.sourceLanguage}
-                uiLanguage={config.uiLanguage}
-                searchPlaceholder={t('searchLanguage')}
-                noResultsText={t('noResults')}
-                isOpen={openSelect === 'source'}
-                onOpenChange={(open) => setOpenSelect(open ? 'source' : null)}
-                onChange={(value) => updateField('sourceLanguage', value)}
+        <div className="flex flex-1 flex-col justify-center gap-4">
+          {!translation.isActive ? (
+            <>
+              <StatusHero
+                title={inactiveTitle}
+                description={inactiveDescription}
+                loading={!translation.isModelReady}
               />
-              <LanguageSelect
-                label={t('targetLanguage')}
-                value={config.targetLanguage}
-                uiLanguage={config.uiLanguage}
-                searchPlaceholder={t('searchLanguage')}
-                noResultsText={t('noResults')}
-                isOpen={openSelect === 'target'}
-                onOpenChange={(open) => setOpenSelect(open ? 'target' : null)}
-                onChange={(value) => updateField('targetLanguage', value)}
-                placement="top"
-              />
-            </div>
 
-            <PrimaryButton
-              icon={<PlayIcon />}
-              onClick={toggle}
-              disabled={!translation.isModelReady || translation.isLoading}
-            >
-              {translation.isLoading ? t('connecting') : t('startTranslation')}
-            </PrimaryButton>
-          </>
-        ) : (
-          <>
-            <WaveformIndicator title={activeTitle} subtitle={activeSubtitle} intense />
-            <PrimaryButton
-              icon={<StopIcon />}
-              onClick={toggle}
-              variant="ghost"
-              disabled={translation.isLoading}
-            >
-              {translation.isLoading ? t('connecting') : t('stop')}
-            </PrimaryButton>
-          </>
-        )}
+              <div className="flex flex-col gap-3">
+                <LanguageSelect
+                  label={t('sourceLanguage')}
+                  value={config.sourceLanguage}
+                  uiLanguage={config.uiLanguage}
+                  searchPlaceholder={t('searchLanguage')}
+                  noResultsText={t('noResults')}
+                  isOpen={openSelect === 'source'}
+                  onOpenChange={(open) => setOpenSelect(open ? 'source' : null)}
+                  onChange={(value) => updateField('sourceLanguage', value)}
+                />
+                <LanguageSelect
+                  label={t('targetLanguage')}
+                  value={config.targetLanguage}
+                  uiLanguage={config.uiLanguage}
+                  searchPlaceholder={t('searchLanguage')}
+                  noResultsText={t('noResults')}
+                  isOpen={openSelect === 'target'}
+                  onOpenChange={(open) => setOpenSelect(open ? 'target' : null)}
+                  onChange={(value) => updateField('targetLanguage', value)}
+                  placement="top"
+                />
+              </div>
 
-        {translation.error && (
-          <p className="text-center text-caption text-red-400">{translation.error}</p>
-        )}
+              <PrimaryButton
+                icon={<PlayIcon />}
+                onClick={toggle}
+                disabled={!translation.isModelReady || translation.isLoading}
+              >
+                {translation.isLoading ? t('connecting') : t('startTranslation')}
+              </PrimaryButton>
+            </>
+          ) : (
+            <>
+              <WaveformIndicator title={activeTitle} subtitle={activeSubtitle} intense />
+              <PrimaryButton
+                icon={<StopIcon />}
+                onClick={toggle}
+                variant="ghost"
+                disabled={translation.isLoading}
+              >
+                {translation.isLoading ? t('connecting') : t('stop')}
+              </PrimaryButton>
+            </>
+          )}
+        </div>
 
-        {saveError && (
-          <p className="text-center text-caption text-red-400">{t('saveError')}</p>
-        )}
+        <Footer label={t('tabAudioOnly')} />
       </div>
-
-      <Footer label={t('tabAudioOnly')} />
-    </div>
+    </>
   )
 }
