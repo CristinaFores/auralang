@@ -14,8 +14,19 @@ export function useTranslation(): UseTranslationReturn {
     error: null,
   })
 
-  // Listen for MODEL_READY signal from offscreen document
   useEffect(() => {
+    // Check if model is already ready (popup opened after model loaded)
+    chrome.runtime.sendMessage<ExtensionMessage>(
+      { type: 'MODEL_READY' },
+      (response: { ready: boolean } | undefined) => {
+        if (chrome.runtime.lastError) return // offscreen not up yet
+        if (response?.ready) {
+          setState((prev) => ({ ...prev, isModelReady: true }))
+        }
+      },
+    )
+
+    // Also listen for the event in case model loads after popup opens
     const handler = (message: ExtensionMessage) => {
       if (message.type === 'MODEL_READY') {
         setState((prev) => ({ ...prev, isModelReady: true }))

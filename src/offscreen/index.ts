@@ -3,10 +3,13 @@ import { processAudioChunk } from './pipeline'
 import { getTranscriber } from '../services/transcriptionService'
 import type { ExtensionMessage, StartCapturePayload } from '../types'
 
+let modelReady = false
+
 console.log('[AuraLang] Offscreen document started — loading Whisper model...')
 
 getTranscriber()
   .then(() => {
+    modelReady = true
     console.log('[AuraLang] Whisper model ready ✓')
     void chrome.runtime.sendMessage<ExtensionMessage>({ type: 'MODEL_READY' })
   })
@@ -56,6 +59,11 @@ chrome.runtime.onMessage.addListener(
         })
 
       return true
+    }
+
+    if (message.type === 'MODEL_READY') {
+      sendResponse({ ready: modelReady })
+      return false
     }
 
     if (message.type === 'END_STREAM') {
