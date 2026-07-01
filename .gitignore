@@ -44,3 +44,6 @@ Thumbs.db
 
 # Local tooling
 .atl/
+
+# Build artifacts
+*.zip
