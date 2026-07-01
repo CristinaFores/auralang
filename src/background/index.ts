@@ -36,8 +36,9 @@ async function stopCapture(): Promise<void> {
 chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse) => {
     if (message.type === 'START_CAPTURE') {
+      // consumerTabId must be the offscreen document's tab — omitting it uses the calling context
       chrome.tabCapture.getMediaStreamId(
-        { consumerTabId: undefined },
+        {},
         (streamId) => {
           if (chrome.runtime.lastError || !streamId) {
             sendResponse({ success: false, error: chrome.runtime.lastError?.message })
