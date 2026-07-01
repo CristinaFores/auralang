@@ -1,13 +1,85 @@
-// Web Speech API — native to Chrome, no API key, no cost
-export function speak(text: string, lang: string = 'es'): void {
-  if (!text.trim()) return
+const LOCALE_MAP: Record<string, string> = {
+  es: 'es-ES',
+  en: 'en-US',
+  fr: 'fr-FR',
+  de: 'de-DE',
+  pt: 'pt-BR',
+  it: 'it-IT',
+  ja: 'ja-JP',
+  zh: 'zh-CN',
+}
 
+let speaking = false
+let pendingText: string | null = null
+let pendingLang = 'es'
+let lastSpoken = ''
+
+if (typeof window !== 'undefined' && window.speechSynthesis) {
+  window.speechSynthesis.getVoices()
+  window.speechSynthesis.onvoiceschanged = () => {
+    window.speechSynthesis.getVoices()
+  }
+}
+
+function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
+  const locale = LOCALE_MAP[lang] ?? lang
+  const voices = window.speechSynthesis.getVoices()
+  const matches = voices.filter(
+    (v) => v.lang.startsWith(lang) || v.lang.startsWith(locale),
+  )
+  return (
+    matches.find((v) => /google|natural|neural|premium/i.test(v.name))
+    ?? matches.find((v) => !v.localService)
+    ?? matches[0]
+  )
+}
+
+function speakNow(text: string, lang: string): void {
   const utterance = new SpeechSynthesisUtterance(text)
-  utterance.lang = lang
-  utterance.rate = 1.0
+  const locale = LOCALE_MAP[lang] ?? lang
+  utterance.lang = locale
+  utterance.rate = 0.95
   utterance.pitch = 1.0
 
-  // Cancel any ongoing speech before starting new one
-  window.speechSynthesis.cancel()
+  const voice = pickVoice(lang)
+  if (voice) utterance.voice = voice
+
+  utterance.onend = () => {
+    speaking = false
+    if (pendingText && pendingText !== lastSpoken) {
+      const next = pendingText
+      const nextLang = pendingLang
+      pendingText = null
+      speakNow(next, nextLang)
+    }
+  }
+
+  utterance.onerror = () => {
+    speaking = false
+    pendingText = null
+  }
+
+  speaking = true
+  lastSpoken = text
   window.speechSynthesis.speak(utterance)
+}
+
+export function speak(text: string, lang: string = 'es'): void {
+  const trimmed = text.trim()
+  if (!trimmed || trimmed === lastSpoken) return
+
+  if (speaking) {
+    pendingText = trimmed
+    pendingLang = lang
+    return
+  }
+
+  speakNow(trimmed, lang)
+}
+
+export function stopSpeech(): void {
+  pendingText = null
+  speaking = false
+  lastSpoken = ''
+  window.speechSynthesis.cancel()
 }
