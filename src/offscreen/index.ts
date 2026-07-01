@@ -1,5 +1,5 @@
 import { startAudioCapture, stopAudioCapture } from './audioCapture'
-import { processAudioChunk } from './pipeline'
+import { processAudioChunk, resetPipelineState } from './pipeline'
 import { getTranscriber } from '../services/transcriptionService'
 import type { ExtensionMessage, StartCapturePayload } from '../types'
 
@@ -69,6 +69,7 @@ chrome.runtime.onMessage.addListener(
     if (message.type === 'END_STREAM') {
       console.log('[AuraLang] END_STREAM — stopping capture')
       stopAudioCapture()
+      resetPipelineState()
       sendResponse({ success: true })
     }
   },
