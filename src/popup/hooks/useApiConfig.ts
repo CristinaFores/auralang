@@ -1,25 +1,23 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { ApiConfig } from '../../types'
+import type { UserConfig } from '../../types'
 
 const STORAGE_KEY = 'auralang_config'
 
-const DEFAULT_CONFIG: ApiConfig = {
-  openaiKey: '',
-  whisperModel: 'whisper-1',
+const DEFAULT_CONFIG: UserConfig = {
   targetLanguage: 'es',
 }
 
-interface UseApiConfigReturn {
-  config: ApiConfig
+interface UseUserConfigReturn {
+  config: UserConfig
   isSaving: boolean
   isSaved: boolean
   error: string | null
-  updateField: <K extends keyof ApiConfig>(key: K, value: ApiConfig[K]) => void
+  updateField: <K extends keyof UserConfig>(key: K, value: UserConfig[K]) => void
   save: () => Promise<void>
 }
 
-export function useApiConfig(): UseApiConfigReturn {
-  const [config, setConfig] = useState<ApiConfig>(DEFAULT_CONFIG)
+export function useApiConfig(): UseUserConfigReturn {
+  const [config, setConfig] = useState<UserConfig>(DEFAULT_CONFIG)
   const [isSaving, setIsSaving] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,13 +29,13 @@ export function useApiConfig(): UseApiConfigReturn {
         return
       }
       if (result[STORAGE_KEY]) {
-        setConfig(result[STORAGE_KEY] as ApiConfig)
+        setConfig(result[STORAGE_KEY] as UserConfig)
       }
     })
   }, [])
 
   const updateField = useCallback(
-    <K extends keyof ApiConfig>(key: K, value: ApiConfig[K]) => {
+    <K extends keyof UserConfig>(key: K, value: UserConfig[K]) => {
       setConfig((prev) => ({ ...prev, [key]: value }))
       setIsSaved(false)
     },
@@ -47,21 +45,17 @@ export function useApiConfig(): UseApiConfigReturn {
   const save = useCallback(async () => {
     setIsSaving(true)
     setError(null)
-
     try {
       await new Promise<void>((resolve, reject) => {
         chrome.storage.local.set({ [STORAGE_KEY]: config }, () => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message))
-          } else {
-            resolve()
-          }
+          if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message))
+          else resolve()
         })
       })
       setIsSaved(true)
       setTimeout(() => setIsSaved(false), 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save config')
+      setError(err instanceof Error ? err.message : 'Failed to save')
     } finally {
       setIsSaving(false)
     }

@@ -1,7 +1,17 @@
 import { useApiConfig } from './hooks/useApiConfig'
 import { useTranslation } from './hooks/useTranslation'
-import { ApiKeyInput } from './components/ApiKeyInput'
 import { StatusBadge } from './components/StatusBadge'
+
+const LANGUAGES = [
+  { code: 'es', label: 'Spanish' },
+  { code: 'en', label: 'English' },
+  { code: 'fr', label: 'French' },
+  { code: 'de', label: 'German' },
+  { code: 'pt', label: 'Portuguese' },
+  { code: 'it', label: 'Italian' },
+  { code: 'ja', label: 'Japanese' },
+  { code: 'zh', label: 'Chinese' },
+]
 
 export default function App() {
   const { config, isSaving, isSaved, error: saveError, updateField, save } = useApiConfig()
@@ -12,8 +22,6 @@ export default function App() {
     void save()
   }
 
-  const hasKey = config.openaiKey.trim().length > 0
-
   return (
     <div className="w-80 bg-gray-900 text-white p-5 flex flex-col gap-5">
       {/* Header */}
@@ -22,31 +30,28 @@ export default function App() {
           🎙
         </div>
         <h1 className="font-semibold text-base">AuraLang</h1>
-        <span className="ml-auto text-xs text-gray-500">BYOK</span>
+        {translation.isModelReady && (
+          <span className="ml-auto text-xs text-green-400">Model ready ✓</span>
+        )}
+        {!translation.isModelReady && (
+          <span className="ml-auto text-xs text-yellow-400 animate-pulse">Loading model…</span>
+        )}
       </div>
 
-      {/* Config form */}
+      {/* Language selector */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <ApiKeyInput
-          value={config.openaiKey}
-          onChange={(v) => updateField('openaiKey', v)}
-        />
-
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-            Target Language
+            Translate to
           </label>
           <select
             value={config.targetLanguage}
             onChange={(e) => updateField('targetLanguage', e.target.value)}
             className="bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
           >
-            <option value="es">Spanish</option>
-            <option value="en">English</option>
-            <option value="fr">French</option>
-            <option value="de">German</option>
-            <option value="pt">Portuguese</option>
-            <option value="it">Italian</option>
+            {LANGUAGES.map((l) => (
+              <option key={l.code} value={l.code}>{l.label}</option>
+            ))}
           </select>
         </div>
 
@@ -54,7 +59,7 @@ export default function App() {
           <StatusBadge isSaving={isSaving} isSaved={isSaved} error={saveError} />
           <button
             type="submit"
-            disabled={isSaving || !hasKey}
+            disabled={isSaving}
             className="ml-auto bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
           >
             Save
@@ -66,7 +71,7 @@ export default function App() {
       <div className="border-t border-gray-800 pt-4 flex flex-col gap-2">
         <button
           onClick={toggle}
-          disabled={!hasKey || translation.isLoading}
+          disabled={!translation.isModelReady || translation.isLoading}
           className={`w-full text-sm font-medium py-2 rounded-md transition-colors ${
             translation.isActive
               ? 'bg-red-600 hover:bg-red-500 text-white'
@@ -84,8 +89,10 @@ export default function App() {
           <p className="text-xs text-red-400 text-center">{translation.error}</p>
         )}
 
-        {!hasKey && (
-          <p className="text-center text-xs text-gray-600">Save your API key first</p>
+        {!translation.isModelReady && (
+          <p className="text-center text-xs text-gray-600">
+            Downloading Whisper model (~75MB)…
+          </p>
         )}
       </div>
     </div>
