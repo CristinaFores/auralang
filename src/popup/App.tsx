@@ -1,14 +1,18 @@
 import { useApiConfig } from './hooks/useApiConfig'
+import { useTranslation } from './hooks/useTranslation'
 import { ApiKeyInput } from './components/ApiKeyInput'
 import { StatusBadge } from './components/StatusBadge'
 
 export default function App() {
-  const { config, isSaving, isSaved, error, updateField, save } = useApiConfig()
+  const { config, isSaving, isSaved, error: saveError, updateField, save } = useApiConfig()
+  const { state: translation, toggle } = useTranslation()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     void save()
   }
+
+  const hasKey = config.openaiKey.trim().length > 0
 
   return (
     <div className="w-80 bg-gray-900 text-white p-5 flex flex-col gap-5">
@@ -47,10 +51,10 @@ export default function App() {
         </div>
 
         <div className="flex items-center justify-between">
-          <StatusBadge isSaving={isSaving} isSaved={isSaved} error={error} />
+          <StatusBadge isSaving={isSaving} isSaved={isSaved} error={saveError} />
           <button
             type="submit"
-            disabled={isSaving || !config.openaiKey.trim()}
+            disabled={isSaving || !hasKey}
             className="ml-auto bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
           >
             Save
@@ -58,17 +62,31 @@ export default function App() {
         </div>
       </form>
 
-      {/* Translation toggle — wired in Phase 3 */}
-      <div className="border-t border-gray-800 pt-4">
+      {/* Translation toggle */}
+      <div className="border-t border-gray-800 pt-4 flex flex-col gap-2">
         <button
-          disabled
-          className="w-full bg-gray-800 text-gray-500 text-sm font-medium py-2 rounded-md cursor-not-allowed"
+          onClick={toggle}
+          disabled={!hasKey || translation.isLoading}
+          className={`w-full text-sm font-medium py-2 rounded-md transition-colors ${
+            translation.isActive
+              ? 'bg-red-600 hover:bg-red-500 text-white'
+              : 'bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white'
+          }`}
         >
-          Start Translation
+          {translation.isLoading
+            ? 'Connecting…'
+            : translation.isActive
+              ? 'Stop Translation'
+              : 'Start Translation'}
         </button>
-        <p className="text-center text-xs text-gray-600 mt-2">
-          Save your API key first
-        </p>
+
+        {translation.error && (
+          <p className="text-xs text-red-400 text-center">{translation.error}</p>
+        )}
+
+        {!hasKey && (
+          <p className="text-center text-xs text-gray-600">Save your API key first</p>
+        )}
       </div>
     </div>
   )
