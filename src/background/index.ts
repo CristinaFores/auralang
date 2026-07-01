@@ -32,8 +32,8 @@ async function stopCapture(): Promise<void> {
     contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
   })
   if (contexts.length > 0) {
+    // Keep offscreen alive so the model stays in memory
     await chrome.runtime.sendMessage<ExtensionMessage>({ type: 'END_STREAM' })
-    await chrome.offscreen.closeDocument()
   }
 }
 
