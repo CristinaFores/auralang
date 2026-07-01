@@ -2,21 +2,24 @@
 // The offscreen doc stays alive as long as Chrome keeps it — this is intentional (MV3 pattern).
 
 export interface AudioCaptureHandlers {
-  onChunk: (blob: Blob) => void
+  onChunk: (samples: Float32Array) => void
   onError: (message: string) => void
 }
 
 const CHUNK_INTERVAL_MS = 4000
-const MIME_TYPE = 'audio/webm;codecs=opus'
+const WHISPER_SAMPLE_RATE = 16000
+const SAMPLES_PER_CHUNK = WHISPER_SAMPLE_RATE * (CHUNK_INTERVAL_MS / 1000)
 
-let mediaRecorder: MediaRecorder | null = null
+let scriptProcessor: ScriptProcessorNode | null = null
 let audioContext: AudioContext | null = null
+let pendingSamples: Float32Array[] = []
+let pendingLength = 0
 
 export async function startAudioCapture(
   streamId: string,
   handlers: AudioCaptureHandlers,
 ): Promise<void> {
-  if (mediaRecorder) return // already running
+  if (scriptProcessor) return // already running
 
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
@@ -29,41 +32,58 @@ export async function startAudioCapture(
     video: false,
   })
 
-  // Mute the original tab output so user only hears the translation
-  audioContext = new AudioContext()
+  // Resample to 16 kHz mono — Whisper expects raw PCM Float32Array
+  audioContext = new AudioContext({ sampleRate: WHISPER_SAMPLE_RATE })
   const source = audioContext.createMediaStreamSource(stream)
-  source.connect(audioContext.destination) // keep graph alive; volume handled via GainNode below
 
   const gain = audioContext.createGain()
-  gain.gain.value = 0 // silence original audio
+  gain.gain.value = 0 // silence original tab audio
   source.connect(gain)
   gain.connect(audioContext.destination)
 
-  if (!MediaRecorder.isTypeSupported(MIME_TYPE)) {
-    handlers.onError(`MIME type not supported: ${MIME_TYPE}`)
-    return
-  }
+  scriptProcessor = audioContext.createScriptProcessor(4096, 2, 1)
+  scriptProcessor.onaudioprocess = (event) => {
+    const left = event.inputBuffer.getChannelData(0)
+    const right =
+      event.inputBuffer.numberOfChannels > 1
+        ? event.inputBuffer.getChannelData(1)
+        : left
+    const mono = new Float32Array(left.length)
+    for (let i = 0; i < left.length; i++) {
+      mono[i] = (left[i] + right[i]) / 2
+    }
 
-  mediaRecorder = new MediaRecorder(stream, { mimeType: MIME_TYPE })
+    pendingSamples.push(mono)
+    pendingLength += mono.length
 
-  mediaRecorder.ondataavailable = (event) => {
-    if (event.data.size > 0) {
-      handlers.onChunk(event.data)
+    while (pendingLength >= SAMPLES_PER_CHUNK) {
+      const chunk = new Float32Array(SAMPLES_PER_CHUNK)
+      let offset = 0
+      while (offset < SAMPLES_PER_CHUNK) {
+        const head = pendingSamples[0]
+        const take = Math.min(head.length, SAMPLES_PER_CHUNK - offset)
+        chunk.set(head.subarray(0, take), offset)
+        offset += take
+        if (take === head.length) pendingSamples.shift()
+        else pendingSamples[0] = head.subarray(take)
+      }
+      pendingLength -= SAMPLES_PER_CHUNK
+      handlers.onChunk(chunk)
     }
   }
 
-  mediaRecorder.onerror = () => {
-    handlers.onError('MediaRecorder encountered an error')
-  }
-
-  mediaRecorder.start(CHUNK_INTERVAL_MS)
+  source.connect(scriptProcessor)
+  scriptProcessor.connect(audioContext.destination)
 }
 
 export function stopAudioCapture(): void {
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop()
+  if (scriptProcessor) {
+    scriptProcessor.disconnect()
+    scriptProcessor.onaudioprocess = null
   }
-  mediaRecorder = null
+  scriptProcessor = null
+  pendingSamples = []
+  pendingLength = 0
 
   if (audioContext) {
     void audioContext.close()

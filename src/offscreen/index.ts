@@ -29,9 +29,9 @@ chrome.runtime.onMessage.addListener(
       console.log('[AuraLang] BEGIN_STREAM received — streamId:', streamId, 'lang:', targetLanguage)
 
       startAudioCapture(streamId, {
-        onChunk: (blob) => {
-          console.log('[AuraLang] Audio chunk received, size:', blob.size)
-          processAudioChunk(blob, targetLanguage).catch((err: unknown) => {
+        onChunk: (samples) => {
+          console.log('[AuraLang] Audio chunk received, samples:', samples.length)
+          processAudioChunk(samples, targetLanguage).catch((err: unknown) => {
             const msg = err instanceof Error ? err.message : 'Pipeline error'
             console.error('[AuraLang] Pipeline error:', msg)
             void chrome.runtime.sendMessage<ExtensionMessage>({
