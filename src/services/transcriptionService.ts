@@ -4,6 +4,8 @@ import { pipeline, env, type AutomaticSpeechRecognitionPipeline } from '@hugging
 // Point to public/ files copied at build time — MV3 blocks external CDN scripts
 if (env.backends.onnx.wasm) {
   env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL('')
+  // Single-thread: SharedArrayBuffer needs COEP, which breaks tabCapture in offscreen
+  env.backends.onnx.wasm.numThreads = 1
 }
 
 // whisper-tiny multilingual — ~75MB, cached after first load
