@@ -40,10 +40,9 @@ async function stopCapture(): Promise<void> {
 chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse) => {
     if (message.type === 'START_CAPTURE') {
-      // consumerTabId must be the offscreen document's tab — omitting it uses the calling context
       const targetLanguage = (message.payload as { targetLanguage?: string })?.targetLanguage ?? 'es'
 
-      // tabCapture.getMediaStreamId must be called from the action handler context
+      // targetTabId = tab to capture; omit consumerTabId so offscreen can redeem the streamId (Chrome 116+)
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const tabId = tabs[0]?.id
         if (!tabId) {
@@ -51,7 +50,7 @@ chrome.runtime.onMessage.addListener(
           return
         }
         chrome.tabCapture.getMediaStreamId(
-          { consumerTabId: tabId, targetTabId: tabId },
+          { targetTabId: tabId },
           (streamId) => {
             if (chrome.runtime.lastError || !streamId) {
               sendResponse({ success: false, error: chrome.runtime.lastError?.message ?? 'No stream ID' })
