@@ -12,7 +12,7 @@ export function useTranslation(config: Pick<UserConfig, 'targetLanguage' | 'sour
     isLoading: false,
     isModelReady: false,
     error: null,
-    transcript: null,
+    transcripts: [],
   })
 
   useEffect(() => {
@@ -56,7 +56,18 @@ export function useTranslation(config: Pick<UserConfig, 'targetLanguage' | 'sour
       }
       if (message.type === 'TRANSCRIPT_UPDATE') {
         const payload = message.payload as TranscriptUpdatePayload
-        setState((prev) => ({ ...prev, transcript: payload }))
+        setState((prev) => {
+          // Each chunk arrives twice: first transcription-only, then with the
+          // translation filled in — same original, so update in place.
+          const transcripts = [...prev.transcripts]
+          const last = transcripts[transcripts.length - 1]
+          if (last && last.original === payload.original) {
+            transcripts[transcripts.length - 1] = payload
+          } else {
+            transcripts.push(payload)
+          }
+          return { ...prev, transcripts: transcripts.slice(-50) }
+        })
       }
     }
     chrome.runtime.onMessage.addListener(handler)
@@ -64,7 +75,7 @@ export function useTranslation(config: Pick<UserConfig, 'targetLanguage' | 'sour
   }, [])
 
   const toggle = useCallback(() => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null, transcript: null }))
+    setState((prev) => ({ ...prev, isLoading: true, error: null, transcripts: [] }))
 
     const type: ExtensionMessage['type'] = state.isActive ? 'STOP_CAPTURE' : 'START_CAPTURE'
 

@@ -13,7 +13,7 @@ export interface TranslationState {
   isLoading: boolean
   isModelReady: boolean
   error: string | null
-  transcript: TranscriptUpdatePayload | null
+  transcripts: TranscriptUpdatePayload[]
 }
 
 export type MessageType =

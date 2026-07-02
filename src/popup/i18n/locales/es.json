@@ -28,5 +28,6 @@
   "modelReady": "Modelo listo",
   "live": "En vivo",
   "saveError": "Error al guardar ajustes",
-  "captureEnded": "Traducción detenida — se cerró la pestaña de origen"
+  "captureEnded": "Traducción detenida — se cerró la pestaña de origen",
+  "captureNotAllowed": "Esta pestaña no se puede capturar. Abre el panel desde el icono de AuraLang en la pestaña que quieras traducir (las páginas internas de Chrome no se pueden traducir)."
 }

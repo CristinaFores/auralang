@@ -6,11 +6,20 @@ const CAPTURE_STATE_KEY = 'auralang_capture_active'
 let captureActive = false
 let capturedTabId: number | null = null
 
-// Open the side panel on icon click instead of a popup — the popup closes on
-// any focus loss (clicking the video, switching tabs), which made it useless
-// for watching live captions while actually watching the tab. The side panel
-// stays open until the user closes it.
-void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+const PANEL_PATH = 'src/popup/index.html'
+
+// Per-tab side panel, opened explicitly on icon click. A globally-registered
+// panel (manifest side_panel.default_path + openPanelOnActionClick) stays
+// visible on every tab and window — and lets the user hit Start on tabs where
+// the icon was never clicked, where activeTab was never granted, so capture
+// fails with "Extension has not been invoked for the current page". Opening
+// per-tab means the icon click both grants activeTab for that exact tab and
+// scopes the panel to it: it only shows while that tab is active.
+chrome.action.onClicked.addListener((tab) => {
+  if (tab.id === undefined) return
+  void chrome.sidePanel.setOptions({ tabId: tab.id, path: PANEL_PATH, enabled: true })
+  void chrome.sidePanel.open({ tabId: tab.id })
+})
 
 // Create offscreen document immediately so Whisper model starts loading
 chrome.runtime.onInstalled.addListener((details) => {

@@ -28,5 +28,6 @@
   "modelReady": "Model ready",
   "live": "Live",
   "saveError": "Failed to save settings",
-  "captureEnded": "Translation stopped — the source tab was closed"
+  "captureEnded": "Translation stopped — the source tab was closed",
+  "captureNotAllowed": "This tab can't be captured. Open the panel from the AuraLang icon on the tab you want to translate (Chrome's internal pages can't be translated)."
 }

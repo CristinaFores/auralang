@@ -12,7 +12,7 @@ import { WaveformIndicator } from './components/WaveformIndicator'
 import { PrimaryButton } from './components/PrimaryButton'
 import { Footer } from './components/Footer'
 import { SettingsPanel } from './components/SettingsPanel'
-import { LiveCaption } from './components/LiveCaption'
+import { TranscriptFeed } from './components/TranscriptFeed'
 import { PlayIcon, StopIcon } from './components/Icons'
 import type { UiLanguage, UiTheme } from '../types'
 
@@ -70,7 +70,7 @@ export default function App() {
         }}
       />
 
-      <div className="popup-shell relative flex min-h-screen w-full flex-col overflow-x-hidden p-5">
+      <div className="popup-shell relative flex h-screen w-full flex-col overflow-x-hidden p-5">
         <Header
           tagline={t('tagline')}
           settingsAriaLabel={t('settings.openAriaLabel')}
@@ -92,7 +92,7 @@ export default function App() {
           t={t}
         />
 
-        <div className="flex flex-1 flex-col gap-4 pt-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 pt-4">
           {!translation.isActive ? (
             <>
               <StatusHero
@@ -136,7 +136,7 @@ export default function App() {
           ) : (
             <>
               <WaveformIndicator title={activeTitle} subtitle={activeSubtitle} intense />
-              <LiveCaption transcript={translation.transcript} translatingLabel={t('translating')} />
+              <TranscriptFeed transcripts={translation.transcripts} translatingLabel={t('translating')} />
               <PrimaryButton
                 icon={<StopIcon />}
                 onClick={toggle}

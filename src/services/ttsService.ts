@@ -52,7 +52,11 @@ function speakNow(text: string, lang: string): void {
   const utterance = new SpeechSynthesisUtterance(text)
   const locale = LOCALE_MAP[lang] ?? lang
   utterance.lang = locale
-  utterance.rate = 0.95
+  // Slightly above natural speed: while an utterance plays, new translations
+  // queue behind it (and the oldest get dropped past the queue cap). Speaking
+  // faster drains the queue sooner, losing fewer phrases and lagging less
+  // behind the live video.
+  utterance.rate = 1.1
   utterance.pitch = 1.0
 
   const voice = pickVoice(lang)

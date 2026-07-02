@@ -94,21 +94,25 @@
     animation: pulseGlow 2s ease-in-out infinite;
   }
 
-  .dropdown-list {
+  .dropdown-list,
+  .transcript-feed {
     scrollbar-width: thin;
     scrollbar-color: rgba(108, 77, 255, 0.45) transparent;
   }
 
-  .dropdown-list::-webkit-scrollbar {
+  .dropdown-list::-webkit-scrollbar,
+  .transcript-feed::-webkit-scrollbar {
     width: 6px;
   }
 
-  .dropdown-list::-webkit-scrollbar-thumb {
+  .dropdown-list::-webkit-scrollbar-thumb,
+  .transcript-feed::-webkit-scrollbar-thumb {
     background: rgba(108, 77, 255, 0.35);
     border-radius: 999px;
   }
 
-  .dropdown-list::-webkit-scrollbar-track {
+  .dropdown-list::-webkit-scrollbar-track,
+  .transcript-feed::-webkit-scrollbar-track {
     background: transparent;
   }
 
