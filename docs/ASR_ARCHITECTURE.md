@@ -29,7 +29,9 @@ A bigger model helps (1) but hurts (2) on weak machines. The only honest answer 
 
 ### Known landmine (already hit in production)
 
-`whisper-tiny` `dtype: 'q8'` (`*_quantized.onnx`) fails to load: `Missing required scale: model.decoder.embed_tokens...`. Individual quantized exports **can be broken per repo, per file**. Consequence: quantization choices are never hardcoded assumptions — they are a **probe ladder** (§7) that tries each rung and falls through on load failure. `int8` files are distinct from `quantized` files in these repos and are the first rung.
+`whisper-tiny` `dtype: 'q8'` (`*_quantized.onnx`) fails to load: `Missing required scale: model.decoder.embed_tokens...`. Individual quantized exports **can be broken per repo, per file**. Consequence: quantization choices are never hardcoded assumptions — they are a **probe ladder** (§7) that tries each rung and falls through on load failure.
+
+**Update (confirmed in production):** for `onnx-community/whisper-tiny`, the `int8` decoder export is broken in the *same* way as `q8` — same `weight_merged_0_scale` / `MatMulNBits` session-creation error. So the light tier now ships **fp32-only** (~150 MB): the only export of this model verified to create a session. A quantized rung is only added back after verifying that specific export loads. Before trusting the ladder's fall-through for other models, reproduce a broken-rung → good-rung fall-through end to end — it has not yet been observed working in the browser.
 
 ## 3. Modes (user-facing)
 
