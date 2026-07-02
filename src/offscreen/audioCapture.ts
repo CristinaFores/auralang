@@ -19,9 +19,15 @@ const WHISPER_SAMPLE_RATE = 16000
 // 600ms was too short: normal mid-sentence breathing/comma pauses are often
 // 300-600ms, so it was cutting sentences in half, not just between them.
 // 900ms sits past that range while still catching real between-sentence pauses.
+//
+// MAX at 8s made latency blow up on produced content (talks, YouTube) where
+// narration can run for long stretches with no 900ms pause: 8s of buffering
+// before Whisper even starts, plus inference time that grows with chunk
+// length. 5s bounds that worst case at the cost of occasional mid-sentence
+// cuts on non-stop speech.
 const PAUSE_MS = 900
 const MIN_CHUNK_MS = 600
-const MAX_CHUNK_MS = 8000
+const MAX_CHUNK_MS = 5000
 
 const PAUSE_SAMPLES = WHISPER_SAMPLE_RATE * (PAUSE_MS / 1000)
 const MIN_CHUNK_SAMPLES = WHISPER_SAMPLE_RATE * (MIN_CHUNK_MS / 1000)
@@ -31,6 +37,7 @@ const WORKLET_URL = chrome.runtime.getURL('capture-worklet.js')
 
 let captureNode: AudioWorkletNode | null = null
 let audioContext: AudioContext | null = null
+let mediaStream: MediaStream | null = null
 let pendingSamples: Float32Array[] = []
 let pendingLength = 0
 let silenceRunSamples = 0
@@ -87,6 +94,7 @@ export async function startAudioCapture(
     },
     video: false,
   })
+  mediaStream = stream
 
   // Chrome ends this track when the captured tab closes or navigates away —
   // without this, captureNode stays alive and blocks any new capture attempt
@@ -125,6 +133,16 @@ export function stopAudioCapture(): void {
   captureNode = null
   pendingSamples = []
   pendingLength = 0
+
+  // Release the capture stream. While a tab-capture track is live, Chrome
+  // keeps the tab captured — and a captured tab stays muted. Disconnecting
+  // the audio graph alone left the track running, so the original tab audio
+  // never came back after Stop (and restarting hit "Cannot capture a tab
+  // with an active stream").
+  if (mediaStream) {
+    for (const track of mediaStream.getTracks()) track.stop()
+    mediaStream = null
+  }
 
   if (audioContext) {
     void audioContext.close()
