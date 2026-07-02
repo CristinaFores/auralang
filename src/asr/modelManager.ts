@@ -28,16 +28,29 @@ function rungKey(tier: ModelTier, rung: DtypeRung): string {
   return `${tier.modelId}|${rung.device}|${rung.encoderDtype}|${rung.decoderDtype}|${version}`
 }
 
-async function getBadRungs(): Promise<string[]> {
-  const stored = await chrome.storage.local.get(BAD_RUNGS_KEY)
-  const value = stored[BAD_RUNGS_KEY]
-  return Array.isArray(value) ? (value as string[]) : []
+// localStorage, not chrome.storage: this module runs in the offscreen
+// document, where the only extension API available is chrome.runtime —
+// chrome.storage is undefined there. localStorage on the extension origin
+// persists across offscreen document recreations just the same.
+function getBadRungs(): string[] {
+  try {
+    const raw = localStorage.getItem(BAD_RUNGS_KEY)
+    const value: unknown = raw ? JSON.parse(raw) : []
+    return Array.isArray(value) ? (value as string[]) : []
+  } catch {
+    return []
+  }
 }
 
-async function markBad(key: string): Promise<void> {
-  const bad = await getBadRungs()
-  if (!bad.includes(key)) {
-    await chrome.storage.local.set({ [BAD_RUNGS_KEY]: [...bad, key] })
+function markBad(key: string): void {
+  try {
+    const bad = getBadRungs()
+    if (!bad.includes(key)) {
+      localStorage.setItem(BAD_RUNGS_KEY, JSON.stringify([...bad, key]))
+    }
+  } catch {
+    // Persistence is an optimization; failing to remember a bad rung only
+    // costs a retry on next startup.
   }
 }
 
@@ -67,7 +80,7 @@ async function loadRung(
 }
 
 async function loadTier(tier: ModelTier): Promise<AutomaticSpeechRecognitionPipeline> {
-  const bad = await getBadRungs()
+  const bad = getBadRungs()
   let lastError: unknown = null
 
   for (const rung of tier.ladder) {
@@ -80,7 +93,7 @@ async function loadTier(tier: ModelTier): Promise<AutomaticSpeechRecognitionPipe
       return loaded
     } catch (err) {
       lastError = err
-      await markBad(key)
+      markBad(key)
     }
   }
 
