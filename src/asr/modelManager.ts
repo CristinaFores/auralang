@@ -1,5 +1,5 @@
 import { pipeline, env, type AutomaticSpeechRecognitionPipeline } from '@huggingface/transformers'
-import type { DtypeRung, ModelStatus, ModelTier } from './types'
+import type { AsrTierId, DtypeRung, ModelStatus, ModelTier } from './types'
 import { DEFAULT_TIER } from './registry'
 // Baked in at build time. The offscreen document exposes only a subset of
 // chrome.runtime (getURL and messaging work, getManifest does not), so the
@@ -19,6 +19,10 @@ type StatusListener = (status: ModelStatus) => void
 
 let transcriber: AutomaticSpeechRecognitionPipeline | null = null
 let loading: Promise<AutomaticSpeechRecognitionPipeline> | null = null
+let currentTierId: AsrTierId | null = null
+// Bumped on every tier switch so a slower, superseded load can't overwrite the
+// active transcriber when it finally resolves.
+let loadToken = 0
 let listener: StatusListener = () => {}
 
 export function onModelStatus(fn: StatusListener): void {
@@ -109,17 +113,45 @@ async function loadTier(tier: ModelTier): Promise<AutomaticSpeechRecognitionPipe
   throw new Error(message)
 }
 
-export async function getTranscriber(): Promise<AutomaticSpeechRecognitionPipeline> {
-  if (transcriber) return transcriber
-  loading ??= loadTier(DEFAULT_TIER).then((loaded) => {
+// Load (or switch to) a model tier. Idempotent: selecting the tier that's
+// already loaded or in flight is a no-op. Switching disposes the previous model.
+export function setModelTier(tier: ModelTier): void {
+  if (currentTierId === tier.id && (transcriber || loading)) return
+
+  currentTierId = tier.id
+  const myToken = ++loadToken
+  const previous = transcriber
+  transcriber = null
+
+  const p = loadTier(tier).then((loaded) => {
+    // A newer switch happened while this was loading — discard this result.
+    if (myToken !== loadToken) {
+      void loaded.dispose?.()
+      return loaded
+    }
     transcriber = loaded
     return loaded
   })
+  loading = p
+  // Prevent unhandled rejection; the error was already surfaced via listener.
+  p.catch(() => {})
+
+  void previous?.dispose?.()
+}
+
+export async function getTranscriber(): Promise<AutomaticSpeechRecognitionPipeline> {
+  if (transcriber) return transcriber
+  // No tier selected yet (e.g. capture started before the popup set one) —
+  // fall back to the default so transcription still works.
+  if (!loading) setModelTier(DEFAULT_TIER)
   try {
-    return await loading
+    return await loading!
   } finally {
     // A rejected load must not poison future attempts (e.g. transient network
     // failure on first download) — allow retry on the next call.
-    if (!transcriber) loading = null
+    if (!transcriber) {
+      loading = null
+      currentTierId = null
+    }
   }
 }

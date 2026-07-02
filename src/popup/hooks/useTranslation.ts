@@ -7,7 +7,9 @@ export interface UseTranslationReturn {
   toggle: () => void
 }
 
-export function useTranslation(config: Pick<UserConfig, 'targetLanguage' | 'sourceLanguage'>): UseTranslationReturn {
+export function useTranslation(
+  config: Pick<UserConfig, 'targetLanguage' | 'sourceLanguage' | 'asrMode'>,
+): UseTranslationReturn {
   const [state, setState] = useState<TranslationState>({
     isActive: false,
     isLoading: false,
@@ -84,6 +86,16 @@ export function useTranslation(config: Pick<UserConfig, 'targetLanguage' | 'sour
     return () => chrome.runtime.onMessage.removeListener(handler)
   }, [])
 
+  // Tell the offscreen document which model tier to (pre)load. Runs on mount and
+  // whenever the mode changes. If the offscreen doc isn't up yet, the message is
+  // dropped harmlessly — START_CAPTURE carries the mode as a fallback.
+  useEffect(() => {
+    chrome.runtime.sendMessage<ExtensionMessage>(
+      { type: 'SET_ASR_MODE', payload: { mode: config.asrMode } },
+      () => void chrome.runtime.lastError,
+    )
+  }, [config.asrMode])
+
   const toggle = useCallback(() => {
     setState((prev) => ({ ...prev, isLoading: true, error: null, transcripts: [] }))
 
@@ -97,6 +109,7 @@ export function useTranslation(config: Pick<UserConfig, 'targetLanguage' | 'sour
           : {
               targetLanguage: config.targetLanguage,
               sourceLanguage: config.sourceLanguage,
+              asrMode: config.asrMode,
             },
       },
       (response: { success: boolean; error?: string }) => {
@@ -115,7 +128,7 @@ export function useTranslation(config: Pick<UserConfig, 'targetLanguage' | 'sour
         }))
       },
     )
-  }, [state.isActive, config.targetLanguage, config.sourceLanguage])
+  }, [state.isActive, config.targetLanguage, config.sourceLanguage, config.asrMode])
 
   return { state, toggle }
 }

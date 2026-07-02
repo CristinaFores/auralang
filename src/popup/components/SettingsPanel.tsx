@@ -1,4 +1,5 @@
 import type { UiLanguage, UiTheme } from '../../types'
+import type { AsrMode } from '../../asr/types'
 import { CloseIcon } from './Icons'
 import { SegmentedControl } from './SegmentedControl'
 import type { MessageKey } from '../hooks/useI18n'
@@ -8,10 +9,13 @@ interface SettingsPanelProps {
   onClose: () => void
   uiLanguage: UiLanguage
   uiTheme: UiTheme
+  asrMode: AsrMode
+  asrModeLocked: boolean
   backdropCloseAriaLabel: string
   closeAriaLabel: string
   onLanguageChange: (lang: UiLanguage) => void
   onThemeChange: (theme: UiTheme) => void
+  onAsrModeChange: (mode: AsrMode) => void
   t: (key: MessageKey) => string
 }
 
@@ -20,10 +24,13 @@ export function SettingsPanel({
   onClose,
   uiLanguage,
   uiTheme,
+  asrMode,
+  asrModeLocked,
   backdropCloseAriaLabel,
   closeAriaLabel,
   onLanguageChange,
   onThemeChange,
+  onAsrModeChange,
   t,
 }: SettingsPanelProps) {
   if (!isOpen) return null
@@ -71,6 +78,26 @@ export function SettingsPanel({
               { value: 'light', label: t('theme.light') },
             ]}
           />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <span className="text-caption font-medium text-muted">{t('settings.model')}</span>
+          <SegmentedControl
+            value={asrMode}
+            onChange={onAsrModeChange}
+            disabled={asrModeLocked}
+            options={[
+              { value: 'light', label: t('model.light') },
+              { value: 'balanced', label: t('model.balanced') },
+            ]}
+          />
+          <span className="text-caption leading-snug text-muted">
+            {asrModeLocked
+              ? t('model.lockedHint')
+              : asrMode === 'balanced'
+                ? t('model.balancedHint')
+                : t('model.lightHint')}
+          </span>
         </div>
       </div>
     </>

@@ -15,6 +15,7 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { TranscriptFeed } from './components/TranscriptFeed'
 import { PlayIcon, StopIcon } from './components/Icons'
 import type { UiLanguage, UiTheme } from '../types'
+import type { AsrMode } from '../asr/types'
 
 type OpenSelect = 'source' | 'target' | null
 
@@ -91,10 +92,13 @@ export default function App() {
           onClose={() => setSettingsOpen(false)}
           uiLanguage={config.uiLanguage}
           uiTheme={config.uiTheme}
+          asrMode={config.asrMode}
+          asrModeLocked={translation.isActive}
           backdropCloseAriaLabel={t('settings.backdropAriaLabel')}
           closeAriaLabel={t('settings.closeAriaLabel')}
           onLanguageChange={(lang: UiLanguage) => updateField('uiLanguage', lang)}
           onThemeChange={(theme: UiTheme) => updateField('uiTheme', theme)}
+          onAsrModeChange={(mode: AsrMode) => updateField('asrMode', mode)}
           t={t}
         />
 

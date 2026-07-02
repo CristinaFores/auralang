@@ -1,4 +1,4 @@
-import type { ModelStatus } from '../asr/types'
+import type { AsrMode, ModelStatus } from '../asr/types'
 
 export type UiLanguage = 'en' | 'es'
 export type UiTheme = 'dark' | 'light'
@@ -8,6 +8,7 @@ export interface UserConfig {
   sourceLanguage: string
   uiLanguage: UiLanguage
   uiTheme: UiTheme
+  asrMode: AsrMode
 }
 
 export interface TranslationState {
@@ -26,6 +27,7 @@ export type MessageType =
   | 'END_STREAM'          // background → offscreen
   | 'MODEL_READY'
   | 'MODEL_STATUS'        // offscreen → popup (download progress, probe, ready, error)
+  | 'SET_ASR_MODE'        // popup → offscreen (which model tier to load)
   | 'GET_CAPTURE_STATE'
   | 'CAPTURE_ENDED'       // offscreen → background/popup (source tab closed or stream lost)
   | 'TRANSCRIPT_UPDATE'   // offscreen → popup (live transcription/translation text)
@@ -40,6 +42,7 @@ export interface StartCapturePayload {
   streamId: string
   targetLanguage: string
   sourceLanguage: string
+  asrMode: AsrMode
 }
 
 export interface TranslationResultPayload {

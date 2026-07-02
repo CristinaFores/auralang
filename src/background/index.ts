@@ -1,3 +1,4 @@
+import type { AsrMode } from '../asr/types'
 import type { ExtensionMessage, StartCapturePayload } from '../types'
 
 const OFFSCREEN_URL = chrome.runtime.getURL('src/offscreen/index.html')
@@ -98,19 +99,20 @@ async function beginCaptureForTab(
   tabId: number,
   targetLanguage: string,
   sourceLanguage: string,
+  asrMode: AsrMode,
   isRetry = false,
 ): Promise<void> {
   try {
     const streamId = await requestMediaStreamId(tabId)
     capturedTabId = tabId
-    await startCapture({ streamId, targetLanguage, sourceLanguage })
+    await startCapture({ streamId, targetLanguage, sourceLanguage, asrMode })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
     // Stale session from a tab that closed without a clean STOP_CAPTURE — clear
     // our own state and retry once before giving up.
     if (!isRetry && msg.includes('active stream')) {
       await stopCapture()
-      await beginCaptureForTab(tabId, targetLanguage, sourceLanguage, true)
+      await beginCaptureForTab(tabId, targetLanguage, sourceLanguage, asrMode, true)
       return
     }
     throw err
@@ -120,8 +122,14 @@ async function beginCaptureForTab(
 chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse) => {
     if (message.type === 'START_CAPTURE') {
-      const targetLanguage = (message.payload as { targetLanguage?: string })?.targetLanguage ?? 'es'
-      const sourceLanguage = (message.payload as { sourceLanguage?: string })?.sourceLanguage ?? 'en'
+      const payload = message.payload as {
+        targetLanguage?: string
+        sourceLanguage?: string
+        asrMode?: AsrMode
+      }
+      const targetLanguage = payload?.targetLanguage ?? 'es'
+      const sourceLanguage = payload?.sourceLanguage ?? 'en'
+      const asrMode = payload?.asrMode ?? 'light'
 
       // targetTabId = tab to capture; omit consumerTabId so offscreen can redeem the streamId (Chrome 116+)
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -130,7 +138,7 @@ chrome.runtime.onMessage.addListener(
           sendResponse({ success: false, error: 'No active tab found' })
           return
         }
-        beginCaptureForTab(tabId, targetLanguage, sourceLanguage)
+        beginCaptureForTab(tabId, targetLanguage, sourceLanguage, asrMode)
           .then(() => sendResponse({ success: true }))
           .catch((err: unknown) => {
             const msg = err instanceof Error ? err.message : 'Unknown error'
