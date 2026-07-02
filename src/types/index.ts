@@ -1,3 +1,5 @@
+import type { ModelStatus } from '../asr/types'
+
 export type UiLanguage = 'en' | 'es'
 export type UiTheme = 'dark' | 'light'
 
@@ -14,6 +16,7 @@ export interface TranslationState {
   isModelReady: boolean
   error: string | null
   transcripts: TranscriptUpdatePayload[]
+  modelStatus: ModelStatus | null
 }
 
 export type MessageType =
@@ -22,6 +25,7 @@ export type MessageType =
   | 'BEGIN_STREAM'        // background → offscreen (includes streamId)
   | 'END_STREAM'          // background → offscreen
   | 'MODEL_READY'
+  | 'MODEL_STATUS'        // offscreen → popup (download progress, probe, ready, error)
   | 'GET_CAPTURE_STATE'
   | 'CAPTURE_ENDED'       // offscreen → background/popup (source tab closed or stream lost)
   | 'TRANSCRIPT_UPDATE'   // offscreen → popup (live transcription/translation text)

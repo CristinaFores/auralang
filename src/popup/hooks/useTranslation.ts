@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import type { TranslationState, ExtensionMessage, UserConfig, TranscriptUpdatePayload } from '../../types'
+import type { ModelStatus } from '../../asr/types'
 
 export interface UseTranslationReturn {
   state: TranslationState
@@ -13,6 +14,7 @@ export function useTranslation(config: Pick<UserConfig, 'targetLanguage' | 'sour
     isModelReady: false,
     error: null,
     transcripts: [],
+    modelStatus: null,
   })
 
   useEffect(() => {
@@ -41,6 +43,14 @@ export function useTranslation(config: Pick<UserConfig, 'targetLanguage' | 'sour
     const handler = (message: ExtensionMessage) => {
       if (message.type === 'MODEL_READY') {
         setState((prev) => ({ ...prev, isModelReady: true }))
+      }
+      if (message.type === 'MODEL_STATUS') {
+        const payload = message.payload as ModelStatus
+        setState((prev) => ({
+          ...prev,
+          modelStatus: payload,
+          isModelReady: payload.phase === 'ready' ? true : prev.isModelReady,
+        }))
       }
       if (message.type === 'ERROR') {
         const payload = message.payload as { message: string }
