@@ -84,11 +84,15 @@ async function loadRung(
 
 async function loadTier(tier: ModelTier): Promise<AutomaticSpeechRecognitionPipeline> {
   const bad = getBadRungs()
-  let lastError: unknown = null
 
-  for (const rung of tier.ladder) {
-    const key = rungKey(tier, rung)
-    if (bad.includes(key)) continue
+  // Prefer rungs not previously known to fail, but if every rung is flagged
+  // bad, try them all anyway: a stale/incorrect bad entry must never make the
+  // tier permanently unloadable.
+  const preferred = tier.ladder.filter((rung) => !bad.includes(rungKey(tier, rung)))
+  const rungs = preferred.length > 0 ? preferred : tier.ladder
+
+  let lastError: unknown = null
+  for (const rung of rungs) {
     try {
       listener({ phase: 'probing' })
       const loaded = await loadRung(tier, rung)
@@ -96,7 +100,7 @@ async function loadTier(tier: ModelTier): Promise<AutomaticSpeechRecognitionPipe
       return loaded
     } catch (err) {
       lastError = err
-      markBad(key)
+      markBad(rungKey(tier, rung))
     }
   }
 
