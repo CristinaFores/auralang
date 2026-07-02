@@ -30,6 +30,18 @@ export const BALANCED_TIER: ModelTier = {
 
 export const DEFAULT_TIER = LIGHT_TIER
 
+// Auto mode only chooses between the two verified fp32 tiers — no benchmark, no
+// WebGPU (we ship no WebGPU rungs yet). Balanced is ~290MB and slower, so it's
+// reserved for clearly capable machines; everything else (and unknown specs)
+// gets Light. deviceMemory is Chrome-only and capped at 8.
+function prefersBalancedTier(): boolean {
+  const cores = navigator.hardwareConcurrency ?? 4
+  const memoryGB = (navigator as { deviceMemory?: number }).deviceMemory ?? 0
+  return cores >= 8 && memoryGB >= 8
+}
+
 export function tierForMode(mode: AsrMode): ModelTier {
-  return mode === 'balanced' ? BALANCED_TIER : LIGHT_TIER
+  if (mode === 'balanced') return BALANCED_TIER
+  if (mode === 'light') return LIGHT_TIER
+  return prefersBalancedTier() ? BALANCED_TIER : LIGHT_TIER
 }

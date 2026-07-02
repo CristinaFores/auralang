@@ -3,7 +3,6 @@ import { processAudioChunk, resetPipelineState } from './pipeline'
 import { setModelTier, onModelStatus } from '../asr/modelManager'
 import { tierForMode } from '../asr/registry'
 import { enqueueChunk, clearQueue } from '../asr/inferenceQueue'
-import type { AsrMode } from '../asr/types'
 import type { ExtensionMessage, StartCapturePayload } from '../types'
 
 let modelReady = false
@@ -73,13 +72,6 @@ chrome.runtime.onMessage.addListener(
         })
 
       return true
-    }
-
-    if (message.type === 'SET_ASR_MODE') {
-      const mode = (message.payload as { mode?: AsrMode })?.mode ?? 'light'
-      setModelTier(tierForMode(mode))
-      sendResponse({ success: true })
-      return false
     }
 
     if (message.type === 'MODEL_READY') {

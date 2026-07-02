@@ -27,7 +27,6 @@ export type MessageType =
   | 'END_STREAM'          // background → offscreen
   | 'MODEL_READY'
   | 'MODEL_STATUS'        // offscreen → popup (download progress, probe, ready, error)
-  | 'SET_ASR_MODE'        // popup → offscreen (which model tier to load)
   | 'GET_CAPTURE_STATE'
   | 'CAPTURE_ENDED'       // offscreen → background/popup (source tab closed or stream lost)
   | 'TRANSCRIPT_UPDATE'   // offscreen → popup (live transcription/translation text)

@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast'
 import { useApiConfig } from './hooks/useApiConfig'
 import { useTranslation } from './hooks/useTranslation'
 import { useI18n } from './hooks/useI18n'
+import type { MessageKey } from './hooks/useI18n'
 import { useTheme } from './hooks/useTheme'
 import { useErrorToasts } from './hooks/useErrorToasts'
 import { Header } from './components/Header'
@@ -16,6 +17,7 @@ import { TranscriptFeed } from './components/TranscriptFeed'
 import { PlayIcon, StopIcon } from './components/Icons'
 import type { UiLanguage, UiTheme } from '../types'
 import type { AsrMode } from '../asr/types'
+import { tierForMode } from '../asr/registry'
 
 type OpenSelect = 'source' | 'target' | null
 
@@ -37,19 +39,28 @@ export default function App() {
     t,
   })
 
-  const inactiveTitle = translation.isModelReady ? t('readyToTranslate') : t('loadingModel')
-  const downloading =
-    !translation.isModelReady && translation.modelStatus?.phase === 'downloading'
-      ? translation.modelStatus.progress
-      : null
-  const inactiveDescription = translation.isModelReady
-    ? t('readyDescription')
-    : downloading !== null
-      ? `${t('loadingModelDetail')} ${downloading}%`
-      : t('loadingModelDetail')
+  // The model isn't downloaded until the user hits Start, so the idle screen
+  // shows which model will be pulled and its size — nothing downloads silently.
+  const selectedTier = tierForMode(config.asrMode)
+  const modelNote = `${t(`model.${config.asrMode}` as MessageKey)} · ~${selectedTier.approxDownloadMB} MB · ${t('downloadsOnStart')}`
 
-  const activeTitle = translation.isLoading ? t('connecting') : t('listening')
-  const activeSubtitle = translation.isLoading ? t('connectingDescription') : t('capturingAudio')
+  const downloadProgress =
+    translation.modelStatus?.phase === 'downloading' ? translation.modelStatus.progress : null
+  const modelLoading = translation.isActive && !translation.isModelReady
+
+  const activeTitle = translation.isLoading
+    ? t('connecting')
+    : modelLoading
+      ? t('loadingModel')
+      : t('listening')
+  const activeSubtitle =
+    downloadProgress !== null
+      ? `${t('loadingModelDetail')} ${downloadProgress}%`
+      : modelLoading
+        ? t('loadingModelDetail')
+        : translation.isLoading
+          ? t('connectingDescription')
+          : t('capturingAudio')
 
   return (
     <>
@@ -106,10 +117,12 @@ export default function App() {
           {!translation.isActive ? (
             <>
               <StatusHero
-                title={inactiveTitle}
-                description={inactiveDescription}
-                loading={!translation.isModelReady}
+                title={t('readyToTranslate')}
+                description={t('readyDescription')}
+                loading={false}
               />
+
+              <p className="text-center text-caption text-muted">{modelNote}</p>
 
               <div className="flex flex-col gap-3">
                 <LanguageSelect
@@ -135,11 +148,7 @@ export default function App() {
                 />
               </div>
 
-              <PrimaryButton
-                icon={<PlayIcon />}
-                onClick={toggle}
-                disabled={!translation.isModelReady || translation.isLoading}
-              >
+              <PrimaryButton icon={<PlayIcon />} onClick={toggle} disabled={translation.isLoading}>
                 {translation.isLoading ? t('connecting') : t('startTranslation')}
               </PrimaryButton>
             </>
