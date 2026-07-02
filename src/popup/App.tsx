@@ -148,6 +148,15 @@ export default function App() {
                 />
               </div>
 
+              {/* Keep the last session's transcript visible after Stop. */}
+              {translation.transcripts.length > 0 && (
+                <TranscriptFeed
+                  transcripts={translation.transcripts}
+                  translatingLabel={t('translating')}
+                  speakingOriginal={translation.speakingOriginal}
+                />
+              )}
+
               <PrimaryButton icon={<PlayIcon />} onClick={toggle} disabled={translation.isLoading}>
                 {translation.isLoading ? t('connecting') : t('startTranslation')}
               </PrimaryButton>
@@ -155,7 +164,11 @@ export default function App() {
           ) : (
             <>
               <WaveformIndicator title={activeTitle} subtitle={activeSubtitle} intense />
-              <TranscriptFeed transcripts={translation.transcripts} translatingLabel={t('translating')} />
+              <TranscriptFeed
+                transcripts={translation.transcripts}
+                translatingLabel={t('translating')}
+                speakingOriginal={translation.speakingOriginal}
+              />
               <PrimaryButton
                 icon={<StopIcon />}
                 onClick={toggle}

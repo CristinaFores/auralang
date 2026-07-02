@@ -3,6 +3,7 @@ import { processAudioChunk, resetPipelineState } from './pipeline'
 import { setModelTier, onModelStatus } from '../asr/modelManager'
 import { tierForMode } from '../asr/registry'
 import { enqueueChunk, clearQueue } from '../asr/inferenceQueue'
+import { onSpeakingChange } from '../services/ttsService'
 import type { ExtensionMessage, StartCapturePayload } from '../types'
 
 let modelReady = false
@@ -17,8 +18,13 @@ onModelStatus((status) => {
   void chrome.runtime.sendMessage<ExtensionMessage>({ type: 'MODEL_STATUS', payload: status })
 })
 
+// Karaoke: relay which transcript line is currently being read aloud.
+onSpeakingChange((original) => {
+  void chrome.runtime.sendMessage<ExtensionMessage>({ type: 'SPEAKING', payload: { original } })
+})
+
 // The model tier is not loaded eagerly: this document can't read chrome.storage
-// (see modelManager), so the popup tells us which mode to load via SET_ASR_MODE.
+// (see modelManager), so the popup tells us which mode to load on START_CAPTURE.
 
 chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse) => {

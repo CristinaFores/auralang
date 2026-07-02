@@ -18,6 +18,8 @@ export interface TranslationState {
   error: string | null
   transcripts: TranscriptUpdatePayload[]
   modelStatus: ModelStatus | null
+  // Original transcription of the line currently being read aloud (karaoke), or null.
+  speakingOriginal: string | null
 }
 
 export type MessageType =
@@ -27,6 +29,7 @@ export type MessageType =
   | 'END_STREAM'          // background → offscreen
   | 'MODEL_READY'
   | 'MODEL_STATUS'        // offscreen → popup (download progress, probe, ready, error)
+  | 'SPEAKING'            // offscreen → popup (karaoke: which line is being read aloud)
   | 'GET_CAPTURE_STATE'
   | 'CAPTURE_ENDED'       // offscreen → background/popup (source tab closed or stream lost)
   | 'TRANSCRIPT_UPDATE'   // offscreen → popup (live transcription/translation text)

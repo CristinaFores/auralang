@@ -17,6 +17,7 @@ export function useTranslation(
     error: null,
     transcripts: [],
     modelStatus: null,
+    speakingOriginal: null,
   })
 
   useEffect(() => {
@@ -66,6 +67,10 @@ export function useTranslation(
           error: 'captureEnded',
         }))
       }
+      if (message.type === 'SPEAKING') {
+        const payload = message.payload as { original: string | null }
+        setState((prev) => ({ ...prev, speakingOriginal: payload.original }))
+      }
       if (message.type === 'TRANSCRIPT_UPDATE') {
         const payload = message.payload as TranscriptUpdatePayload
         setState((prev) => {
@@ -94,7 +99,7 @@ export function useTranslation(
       ...prev,
       isLoading: true,
       error: null,
-      ...(starting ? { transcripts: [] } : {}),
+      ...(starting ? { transcripts: [], speakingOriginal: null } : {}),
     }))
 
     const type: ExtensionMessage['type'] = state.isActive ? 'STOP_CAPTURE' : 'START_CAPTURE'
