@@ -24,7 +24,7 @@
   "theme.dark": "Dark",
   "theme.light": "Light",
   "loadingModel": "Loading model…",
-  "loadingModelDetail": "Downloading Whisper model (~150MB)…",
+  "loadingModelDetail": "Downloading Whisper model…",
   "modelReady": "Model ready",
   "live": "Live",
   "saveError": "Failed to save settings",

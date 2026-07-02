@@ -17,7 +17,7 @@ AuraLang is a Chrome extension that translates the audio of your active browser 
 
 ## How audio is processed
 
-1. **Transcription**: audio is transcribed locally, on your own device, using a Whisper model (`@huggingface/transformers`, ONNX Runtime WASM). The model weights (~150MB) are downloaded once from Hugging Face (huggingface.co) and cached locally. Audio never leaves your device for transcription.
+1. **Transcription**: audio is transcribed locally, on your own device, using a Whisper model (`@huggingface/transformers`, ONNX Runtime WASM). The model weights (~40–150 MB depending on the variant) are downloaded once from Hugging Face (huggingface.co) and cached locally. Audio never leaves your device for transcription.
 2. **Translation**: the transcribed text is sent to Google's public translation endpoint (`translate.googleapis.com`) solely to obtain the translated text. No other data accompanies this request.
 3. **Speech**: the translated text is read aloud locally using the browser's built-in Web Speech API (`speechSynthesis`). This does not leave your device.
 

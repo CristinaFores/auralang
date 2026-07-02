@@ -37,9 +37,15 @@ export default function App() {
   })
 
   const inactiveTitle = translation.isModelReady ? t('readyToTranslate') : t('loadingModel')
+  const downloading =
+    !translation.isModelReady && translation.modelStatus?.phase === 'downloading'
+      ? translation.modelStatus.progress
+      : null
   const inactiveDescription = translation.isModelReady
     ? t('readyDescription')
-    : t('loadingModelDetail')
+    : downloading !== null
+      ? `${t('loadingModelDetail')} ${downloading}%`
+      : t('loadingModelDetail')
 
   const activeTitle = translation.isLoading ? t('connecting') : t('listening')
   const activeSubtitle = translation.isLoading ? t('connectingDescription') : t('capturingAudio')
