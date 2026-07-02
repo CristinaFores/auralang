@@ -24,7 +24,7 @@
   "theme.dark": "Oscuro",
   "theme.light": "Claro",
   "loadingModel": "Cargando modelo…",
-  "loadingModelDetail": "Descargando modelo Whisper (~75MB)…",
+  "loadingModelDetail": "Descargando modelo Whisper (~150MB)…",
   "modelReady": "Modelo listo",
   "live": "En vivo",
   "saveError": "Error al guardar ajustes",

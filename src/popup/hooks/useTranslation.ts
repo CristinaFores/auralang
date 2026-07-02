@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import type { TranslationState, ExtensionMessage, UserConfig } from '../../types'
+import type { TranslationState, ExtensionMessage, UserConfig, TranscriptUpdatePayload } from '../../types'
 
 export interface UseTranslationReturn {
   state: TranslationState
@@ -12,6 +12,7 @@ export function useTranslation(config: Pick<UserConfig, 'targetLanguage' | 'sour
     isLoading: false,
     isModelReady: false,
     error: null,
+    transcript: null,
   })
 
   useEffect(() => {
@@ -53,13 +54,17 @@ export function useTranslation(config: Pick<UserConfig, 'targetLanguage' | 'sour
           error: 'captureEnded',
         }))
       }
+      if (message.type === 'TRANSCRIPT_UPDATE') {
+        const payload = message.payload as TranscriptUpdatePayload
+        setState((prev) => ({ ...prev, transcript: payload }))
+      }
     }
     chrome.runtime.onMessage.addListener(handler)
     return () => chrome.runtime.onMessage.removeListener(handler)
   }, [])
 
   const toggle = useCallback(() => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null }))
+    setState((prev) => ({ ...prev, isLoading: true, error: null, transcript: null }))
 
     const type: ExtensionMessage['type'] = state.isActive ? 'STOP_CAPTURE' : 'START_CAPTURE'
 

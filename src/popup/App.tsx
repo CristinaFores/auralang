@@ -12,6 +12,7 @@ import { WaveformIndicator } from './components/WaveformIndicator'
 import { PrimaryButton } from './components/PrimaryButton'
 import { Footer } from './components/Footer'
 import { SettingsPanel } from './components/SettingsPanel'
+import { LiveCaption } from './components/LiveCaption'
 import { PlayIcon, StopIcon } from './components/Icons'
 import type { UiLanguage, UiTheme } from '../types'
 
@@ -135,6 +136,7 @@ export default function App() {
           ) : (
             <>
               <WaveformIndicator title={activeTitle} subtitle={activeSubtitle} intense />
+              <LiveCaption transcript={translation.transcript} translatingLabel={t('translating')} />
               <PrimaryButton
                 icon={<StopIcon />}
                 onClick={toggle}
