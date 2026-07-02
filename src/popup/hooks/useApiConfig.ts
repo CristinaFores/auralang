@@ -13,7 +13,7 @@ const DEFAULT_CONFIG: UserConfig = {
   sourceLanguage: 'en',
   uiLanguage: detectBrowserLocale(),
   uiTheme: detectPreferredTheme(),
-  asrMode: 'light',
+  asrMode: 'auto',
 }
 
 interface UseUserConfigReturn {

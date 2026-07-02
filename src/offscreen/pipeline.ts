@@ -38,5 +38,7 @@ export async function processAudioChunk(
   if (!translation) return
 
   onTranscript({ original: transcription, translated: translation })
-  speak(translation, targetLang)
+  // Pass the original transcription as the karaoke id so the UI can highlight
+  // this line while it's being read aloud.
+  speak(translation, targetLang, transcription)
 }

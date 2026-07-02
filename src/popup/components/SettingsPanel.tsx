@@ -43,7 +43,7 @@ export function SettingsPanel({
         onClick={onClose}
         aria-label={backdropCloseAriaLabel}
       />
-      <div className="absolute top-14 right-3 z-20 w-full max-w-[248px] rounded-xl border border-[var(--border-color)] bg-[var(--surface-elevated)] shadow-[0_12px_32px_rgba(15,23,42,0.18)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.45)] p-4 flex flex-col gap-4">
+      <div className="transcript-feed absolute inset-x-3 top-14 z-20 flex max-h-[calc(100vh-5rem)] flex-col gap-4 overflow-y-auto rounded-xl border border-[var(--border-color)] bg-[var(--surface-elevated)] p-4 shadow-[0_12px_32px_rgba(15,23,42,0.18)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.45)]">
         <div className="flex items-center justify-between">
           <h2 className="text-body font-semibold text-[var(--text-primary)]">{t('settings.title')}</h2>
           <button
@@ -87,6 +87,7 @@ export function SettingsPanel({
             onChange={onAsrModeChange}
             disabled={asrModeLocked}
             options={[
+              { value: 'auto', label: t('model.auto') },
               { value: 'light', label: t('model.light') },
               { value: 'balanced', label: t('model.balanced') },
             ]}
@@ -96,7 +97,9 @@ export function SettingsPanel({
               ? t('model.lockedHint')
               : asrMode === 'balanced'
                 ? t('model.balancedHint')
-                : t('model.lightHint')}
+                : asrMode === 'light'
+                  ? t('model.lightHint')
+                  : t('model.autoHint')}
           </span>
         </div>
       </div>

@@ -17,6 +17,7 @@ export function useTranslation(
     error: null,
     transcripts: [],
     modelStatus: null,
+    speakingOriginal: null,
   })
 
   useEffect(() => {
@@ -66,6 +67,10 @@ export function useTranslation(
           error: 'captureEnded',
         }))
       }
+      if (message.type === 'SPEAKING') {
+        const payload = message.payload as { original: string | null }
+        setState((prev) => ({ ...prev, speakingOriginal: payload.original }))
+      }
       if (message.type === 'TRANSCRIPT_UPDATE') {
         const payload = message.payload as TranscriptUpdatePayload
         setState((prev) => {
@@ -86,18 +91,16 @@ export function useTranslation(
     return () => chrome.runtime.onMessage.removeListener(handler)
   }, [])
 
-  // Tell the offscreen document which model tier to (pre)load. Runs on mount and
-  // whenever the mode changes. If the offscreen doc isn't up yet, the message is
-  // dropped harmlessly — START_CAPTURE carries the mode as a fallback.
-  useEffect(() => {
-    chrome.runtime.sendMessage<ExtensionMessage>(
-      { type: 'SET_ASR_MODE', payload: { mode: config.asrMode } },
-      () => void chrome.runtime.lastError,
-    )
-  }, [config.asrMode])
-
   const toggle = useCallback(() => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null, transcripts: [] }))
+    const starting = !state.isActive
+    // Clear the transcript only when starting a new session — keep it visible
+    // after Stop so the user can still read what was said.
+    setState((prev) => ({
+      ...prev,
+      isLoading: true,
+      error: null,
+      ...(starting ? { transcripts: [], speakingOriginal: null } : {}),
+    }))
 
     const type: ExtensionMessage['type'] = state.isActive ? 'STOP_CAPTURE' : 'START_CAPTURE'
 

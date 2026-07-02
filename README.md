@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="icons/auralang_logo_pack/presentation/wordmark-dark.png">
-    <img src="icons/chrome/hero-dark.png" alt="AuraLang — Real-time audio translation" width="420">
+    <img src="icons/auralang_logo_pack/presentation/wordmark-light.png" alt="AuraLang — Real-time audio translation" width="420">
   </picture>
 </p>
 
@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="#-status"><img alt="Chrome Web Store — coming soon" src="https://img.shields.io/badge/Chrome_Web_Store-Coming_soon-6C4DFF?style=for-the-badge&logo=googlechrome&logoColor=white"></a>
+  <a href="https://chromewebstore.google.com/detail/pakdegbkjgibdjkpdniabdocffiejolo"><img alt="Available on the Chrome Web Store" src="https://img.shields.io/badge/Chrome_Web_Store-Available-22C55E?style=for-the-badge&logo=googlechrome&logoColor=white"></a>
 </p>
 
 <p align="center">
@@ -25,13 +25,11 @@
 
 ---
 
-## 🚧 Status
+## 📥 Install
 
-**Coming soon to the Chrome Web Store.**
+**[Add AuraLang from the Chrome Web Store →](https://chromewebstore.google.com/detail/pakdegbkjgibdjkpdniabdocffiejolo)**
 
-The store listing is in review. Once it's live, the install link will be right here:
-
-> 🔗 **Chrome Web Store:** _coming soon_ — meanwhile, [run it locally](#-run-it-locally).
+Prefer to run it from source? See [Run it locally](#-run-it-locally).
 
 ## ✨ What it does
 
@@ -40,6 +38,8 @@ Watching a talk, a podcast, or a video in a language you don't speak? AuraLang l
 - 🎧 **Any tab with audio** — videos, calls, podcasts, live streams.
 - 🧠 **On-device transcription** — Whisper runs locally; audio never leaves your machine.
 - 🗣️ **Spoken translation** — the original tab audio is muted; you only hear the translation.
+- 📊 **Live transcript with karaoke** — read the original + translation in a side panel; the line being spoken is highlighted.
+- 🎚️ **Model modes** — Auto / Light (whisper-tiny) / Balanced (whisper-base): trade speed for accuracy per your device.
 - 🔒 **No key, no account, no backend** — settings live only in your browser.
 - 🌗 **Light & dark themes**, interface in **English and Spanish**.
 
@@ -65,10 +65,10 @@ Then in Chrome:
 1. Open `chrome://extensions`
 2. Enable **Developer mode** (top-right)
 3. Click **Load unpacked** → select the `dist/` folder
-4. Open the popup, pick source & target languages, and hit **Start translation**
-5. Switch to any tab with audio and enjoy
+4. On the tab you want to translate, click the AuraLang icon to open the **side panel**
+5. Pick source & target languages, then hit **Start translation**
 
-> First run downloads the Whisper model (~150 MB) once; it's cached locally afterwards.
+> The Whisper model downloads on first Start and is cached afterwards. Size depends on the model mode: Light ~150 MB, Balanced ~290 MB. Auto picks one from your device.
 
 ## 🛠️ Development
 
@@ -84,7 +84,7 @@ npm run zip         # Build + package dist.zip for the Web Store
 
 | Layer | Tool |
 |---|---|
-| Extension API | Chrome MV3 — `tabCapture`, `offscreen`, `storage` |
+| Extension API | Chrome MV3 — `tabCapture`, `offscreen`, `sidePanel`, `storage` |
 | Build | Vite + `@crxjs/vite-plugin` |
 | UI | React 18 + TypeScript (strict) |
 | Styles | Tailwind CSS |
@@ -96,10 +96,11 @@ npm run zip         # Build + package dist.zip for the Web Store
 
 ```
 src/
-  background/   # Service worker — tabCapture + offscreen lifecycle
+  asr/          # Model tiers/registry, model manager (probe ladder), inference queue
+  background/   # Service worker — tabCapture + offscreen + side panel lifecycle
   offscreen/    # AudioContext + transcription / translation / TTS pipeline
-  popup/        # React UI
-    components/ # Header, StatusHero, WaveformIndicator, LanguageSelect, SettingsPanel…
+  popup/        # React UI (rendered in the side panel)
+    components/ # Header, StatusHero, WaveformIndicator, LanguageSelect, SettingsPanel, TranscriptFeed…
     hooks/      # useApiConfig, useTranslation, useI18n, useTheme
   welcome/      # First-install onboarding page
   services/     # transcriptionService, translationService, ttsService

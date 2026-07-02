@@ -3,12 +3,20 @@ import { LOCALE_MAP } from '../constants/languages'
 interface QueuedSpeech {
   text: string
   lang: string
+  // Karaoke key: the original transcription this utterance corresponds to, so
+  // the UI can highlight the line currently being read aloud.
+  id: string
 }
 
 let speaking = false
 let queue: QueuedSpeech[] = []
 let lastSpoken = ''
 let watchdogId: ReturnType<typeof setTimeout> | null = null
+let speakingListener: (id: string | null) => void = () => {}
+
+export function onSpeakingChange(fn: (id: string | null) => void): void {
+  speakingListener = fn
+}
 
 const WATCHDOG_MS = 15000
 // If translations arrive faster than they can be spoken, don't let the queue grow
@@ -45,10 +53,15 @@ function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
 
 function playNext(): void {
   const next = queue.shift()
-  if (next) speakNow(next.text, next.lang)
+  if (next) {
+    speakNow(next.text, next.lang, next.id)
+  } else {
+    speakingListener(null)
+  }
 }
 
-function speakNow(text: string, lang: string): void {
+function speakNow(text: string, lang: string, id: string): void {
+  speakingListener(id)
   const utterance = new SpeechSynthesisUtterance(text)
   const locale = LOCALE_MAP[lang] ?? lang
   utterance.lang = locale
@@ -87,19 +100,19 @@ function speakNow(text: string, lang: string): void {
   window.speechSynthesis.speak(utterance)
 }
 
-export function speak(text: string, lang: string = 'es'): void {
+export function speak(text: string, lang: string = 'es', id: string = ''): void {
   const trimmed = text.trim()
   if (!trimmed || trimmed === lastSpoken) return
 
   if (speaking) {
-    queue.push({ text: trimmed, lang })
+    queue.push({ text: trimmed, lang, id })
     // Falling behind — drop the oldest backlog so playback catches back up
     // with the live video instead of drifting further out of sync.
     while (queue.length > MAX_QUEUE_LENGTH) queue.shift()
     return
   }
 
-  speakNow(trimmed, lang)
+  speakNow(trimmed, lang, id)
 }
 
 export function stopSpeech(): void {
@@ -107,5 +120,6 @@ export function stopSpeech(): void {
   queue = []
   speaking = false
   lastSpoken = ''
+  speakingListener(null)
   window.speechSynthesis.cancel()
 }
