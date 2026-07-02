@@ -1,6 +1,10 @@
 import { pipeline, env, type AutomaticSpeechRecognitionPipeline } from '@huggingface/transformers'
 import type { DtypeRung, ModelStatus, ModelTier } from './types'
 import { DEFAULT_TIER } from './registry'
+// Baked in at build time. The offscreen document exposes only a subset of
+// chrome.runtime (getURL and messaging work, getManifest does not), so the
+// extension version cannot be read at runtime here.
+import { version as EXTENSION_VERSION } from '../../manifest.json'
 
 // Force local WASM — MV3 blocks external CDN scripts.
 if (env.backends.onnx.wasm) {
@@ -24,8 +28,7 @@ export function onModelStatus(fn: StatusListener): void {
 function rungKey(tier: ModelTier, rung: DtypeRung): string {
   // Keyed by extension version so an update (which may bump transformers.js
   // and fix a previously broken export) retries rungs marked bad in the past.
-  const version = chrome.runtime.getManifest().version
-  return `${tier.modelId}|${rung.device}|${rung.encoderDtype}|${rung.decoderDtype}|${version}`
+  return `${tier.modelId}|${rung.device}|${rung.encoderDtype}|${rung.decoderDtype}|${EXTENSION_VERSION}`
 }
 
 // localStorage, not chrome.storage: this module runs in the offscreen
