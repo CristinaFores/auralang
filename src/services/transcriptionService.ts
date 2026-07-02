@@ -1,27 +1,4 @@
-import { pipeline, env, type AutomaticSpeechRecognitionPipeline } from '@huggingface/transformers'
-
-// Force local WASM — MV3 blocks external CDN scripts
-// Point to public/ files copied at build time — MV3 blocks external CDN scripts
-if (env.backends.onnx.wasm) {
-  env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL('')
-  // Single-thread: SharedArrayBuffer needs COEP, which breaks tabCapture in offscreen
-  env.backends.onnx.wasm.numThreads = 1
-}
-
-// whisper-tiny multilingual — ~150MB (fp32), cached after first load
-const MODEL_ID = 'onnx-community/whisper-tiny'
-
-let transcriber: AutomaticSpeechRecognitionPipeline | null = null
-
-export async function getTranscriber(): Promise<AutomaticSpeechRecognitionPipeline> {
-  if (transcriber) return transcriber
-
-  transcriber = await pipeline('automatic-speech-recognition', MODEL_ID, {
-    dtype: 'fp32',
-  }) as AutomaticSpeechRecognitionPipeline
-
-  return transcriber
-}
+import { getTranscriber } from '../asr/modelManager'
 
 export async function transcribeAudio(
   samples: Float32Array,
