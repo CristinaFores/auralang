@@ -20,6 +20,7 @@
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white">
   <img alt="Vite" src="https://img.shields.io/badge/Vite-build-646CFF?logo=vite&logoColor=white">
   <img alt="No API key" src="https://img.shields.io/badge/API_key-not_required-22C55E">
+  <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
 ---
@@ -112,7 +113,11 @@ No backend, no telemetry, no account. Transcription happens on your device; only
 ## 📚 Docs
 
 - [AGENTS.md](./AGENTS.md) — architecture, TypeScript, services, testing & accessibility conventions (source of truth for contributors).
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — setup, branching, commit conventions.
 - [PRIVACY.md](./PRIVACY.md) — privacy policy.
+- [DISCLAIMER.md](./DISCLAIMER.md) — accuracy limitations, third-party services, no affiliation.
+- [SECURITY.md](./SECURITY.md) — how to report a vulnerability.
+- [LICENSE](./LICENSE) — MIT.
 
 ## 📦 Publishing
 
