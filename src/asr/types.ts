@@ -1,5 +1,8 @@
 export type AsrTierId = 'light' | 'balanced' | 'accuracy'
 
+// User-selectable model modes. 'accuracy'/'auto' are planned but not shipped yet.
+export type AsrMode = 'light' | 'balanced'
+
 // Subset of transformers.js dtypes we actually ship rungs for.
 export type AsrDtype = 'int8' | 'fp16' | 'fp32' | 'q4'
 

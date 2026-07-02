@@ -1,14 +1,16 @@
 import { startAudioCapture, stopAudioCapture } from './audioCapture'
 import { processAudioChunk, resetPipelineState } from './pipeline'
-import { getTranscriber, onModelStatus } from '../asr/modelManager'
+import { setModelTier, onModelStatus } from '../asr/modelManager'
+import { tierForMode } from '../asr/registry'
 import { enqueueChunk, clearQueue } from '../asr/inferenceQueue'
+import type { AsrMode } from '../asr/types'
 import type { ExtensionMessage, StartCapturePayload } from '../types'
 
 let modelReady = false
 
 onModelStatus((status) => {
+  modelReady = status.phase === 'ready'
   if (status.phase === 'ready') {
-    modelReady = true
     // Kept alongside MODEL_STATUS so the popup's existing readiness check
     // works during the migration.
     void chrome.runtime.sendMessage<ExtensionMessage>({ type: 'MODEL_READY' })
@@ -16,19 +18,17 @@ onModelStatus((status) => {
   void chrome.runtime.sendMessage<ExtensionMessage>({ type: 'MODEL_STATUS', payload: status })
 })
 
-getTranscriber().catch((err: unknown) => {
-  const message = err instanceof Error ? err.message : 'Model load failed'
-  console.error('[AuraLang] Model load failed:', message)
-  void chrome.runtime.sendMessage<ExtensionMessage>({
-    type: 'ERROR',
-    payload: { message },
-  })
-})
+// The model tier is not loaded eagerly: this document can't read chrome.storage
+// (see modelManager), so the popup tells us which mode to load via SET_ASR_MODE.
 
 chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse) => {
     if (message.type === 'BEGIN_STREAM') {
-      const { streamId, targetLanguage, sourceLanguage } = message.payload as StartCapturePayload
+      const { streamId, targetLanguage, sourceLanguage, asrMode } = message.payload as StartCapturePayload
+
+      // Guarantee the selected tier is (loading) before capture, in case the
+      // popup's preload SET_ASR_MODE never reached us. No-op if already loaded.
+      setModelTier(tierForMode(asrMode))
 
       startAudioCapture(streamId, {
         onChunk: (samples) => {
@@ -73,6 +73,13 @@ chrome.runtime.onMessage.addListener(
         })
 
       return true
+    }
+
+    if (message.type === 'SET_ASR_MODE') {
+      const mode = (message.payload as { mode?: AsrMode })?.mode ?? 'light'
+      setModelTier(tierForMode(mode))
+      sendResponse({ success: true })
+      return false
     }
 
     if (message.type === 'MODEL_READY') {

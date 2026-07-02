@@ -1,4 +1,4 @@
-import type { ModelTier } from './types'
+import type { AsrMode, ModelTier } from './types'
 
 // Single source of truth for available ASR models. All models multilingual —
 // `.en` variants are banned (see docs/ASR_ARCHITECTURE.md).
@@ -17,5 +17,19 @@ export const LIGHT_TIER: ModelTier = {
   ladder: [{ encoderDtype: 'fp32', decoderDtype: 'fp32', device: 'wasm' }],
 }
 
-// Phase 2 adds BALANCED_TIER (whisper-base) and ACCURACY_TIER (whisper-small).
+// Balanced tier: whisper-base hears noticeably better than tiny (names, technical
+// terms), at the cost of a larger download and higher latency. fp32-only for the
+// same reason as the light tier — this model's quantized decoder exports are not
+// verified to load, and shipping an unverified rung caused stuck loads before.
+export const BALANCED_TIER: ModelTier = {
+  id: 'balanced',
+  modelId: 'onnx-community/whisper-base',
+  approxDownloadMB: 290,
+  ladder: [{ encoderDtype: 'fp32', decoderDtype: 'fp32', device: 'wasm' }],
+}
+
 export const DEFAULT_TIER = LIGHT_TIER
+
+export function tierForMode(mode: AsrMode): ModelTier {
+  return mode === 'balanced' ? BALANCED_TIER : LIGHT_TIER
+}
