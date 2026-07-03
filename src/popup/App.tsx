@@ -6,6 +6,7 @@ import { useI18n } from './hooks/useI18n'
 import type { MessageKey } from './hooks/useI18n'
 import { useTheme } from './hooks/useTheme'
 import { useErrorToasts } from './hooks/useErrorToasts'
+import { useStatusToasts } from './hooks/useStatusToasts'
 import { Header } from './components/Header'
 import { StatusHero } from './components/StatusHero'
 import { LanguageSelect } from './components/LanguageSelect'
@@ -39,27 +40,33 @@ export default function App() {
     t,
   })
 
+  useStatusToasts({ modelStatus: translation.modelStatus, t })
+
   // The model isn't downloaded until the user hits Start, so the idle screen
   // shows which model will be pulled and its size — nothing downloads silently.
   const selectedTier = tierForMode(config.asrMode)
   const modelNote = `${t(`model.${config.asrMode}` as MessageKey)} · ~${selectedTier.approxDownloadMB} MB · ${t('downloadsOnStart')}`
 
-  const downloadProgress =
-    translation.modelStatus?.phase === 'downloading' ? translation.modelStatus.progress : null
+  const modelStatus = translation.modelStatus
+  const downloadProgress = modelStatus?.phase === 'downloading' ? modelStatus.progress : null
+  const probing = modelStatus?.phase === 'probing'
   const modelLoading = translation.isActive && !translation.isModelReady
 
   const activeTitle = translation.isLoading
     ? t('connecting')
-    : modelLoading
-      ? t('loadingModel')
-      : t('listening')
-  const activeSubtitle =
-    downloadProgress !== null
-      ? `${t('loadingModelDetail')} ${downloadProgress}%`
+    : downloadProgress !== null
+      ? t('downloadingModel')
       : modelLoading
-        ? t('loadingModelDetail')
-        : translation.isLoading
-          ? t('connectingDescription')
+        ? t('loadingModel')
+        : t('listening')
+  const activeSubtitle = translation.isLoading
+    ? t('connectingDescription')
+    : downloadProgress !== null
+      ? t('downloadingModelDetail')
+      : probing
+        ? t('preparingModel')
+        : modelLoading
+          ? t('loadingModelDetail')
           : t('capturingAudio')
 
   return (
@@ -163,12 +170,23 @@ export default function App() {
             </>
           ) : (
             <>
-              <WaveformIndicator title={activeTitle} subtitle={activeSubtitle} intense />
-              <TranscriptFeed
-                transcripts={translation.transcripts}
-                translatingLabel={t('translating')}
-                speakingOriginal={translation.speakingOriginal}
+              <WaveformIndicator
+                title={activeTitle}
+                subtitle={activeSubtitle}
+                progress={downloadProgress}
+                intense
               />
+              {/* Hide the transcript box while the model loads — an empty
+                  feed there just reads as a giant blank panel. Once ready, an
+                  empty feed tells the user to play the video. */}
+              {translation.isModelReady && (
+                <TranscriptFeed
+                  transcripts={translation.transcripts}
+                  translatingLabel={t('translating')}
+                  emptyHint={t('playToStart')}
+                  speakingOriginal={translation.speakingOriginal}
+                />
+              )}
               <PrimaryButton
                 icon={<StopIcon />}
                 onClick={toggle}

@@ -4,6 +4,8 @@ import type { TranscriptUpdatePayload } from '../../types'
 interface TranscriptFeedProps {
   transcripts: TranscriptUpdatePayload[]
   translatingLabel: string
+  // Shown centered when there are no transcripts yet (e.g. "play the video").
+  emptyHint?: string
   // Karaoke: original transcription of the line currently being read aloud.
   speakingOriginal: string | null
 }
@@ -11,6 +13,7 @@ interface TranscriptFeedProps {
 export function TranscriptFeed({
   transcripts,
   translatingLabel,
+  emptyHint,
   speakingOriginal,
 }: TranscriptFeedProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -28,7 +31,9 @@ export function TranscriptFeed({
   return (
     <div className="transcript-feed flex min-h-0 w-full flex-1 flex-col gap-2 overflow-y-auto rounded-xl border border-[var(--border-color)] bg-[var(--surface-elevated)] p-3 text-left">
       {transcripts.length === 0 ? (
-        <p className="text-caption text-muted">···</p>
+        <div className="flex flex-1 items-center justify-center px-4 text-center">
+          <p className="text-caption text-muted">{emptyHint ?? '···'}</p>
+        </div>
       ) : (
         transcripts.map((entry, i) => {
           const isSpeaking = speakingOriginal !== null && entry.original === speakingOriginal
