@@ -1,7 +1,7 @@
 {
   "tagline": "Traducción en tiempo real",
   "readyToTranslate": "Listo para traducir",
-  "readyDescription": "Selecciona los idiomas y empieza a traducir el audio de la pestaña",
+  "readyDescription": "Elige el idioma de salida. El original se detecta automáticamente.",
   "downloadsOnStart": "se descarga al iniciar (una vez)",
   "sourceLanguage": "Idioma original",
   "targetLanguage": "Idioma de salida",

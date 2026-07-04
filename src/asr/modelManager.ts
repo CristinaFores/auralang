@@ -69,25 +69,16 @@ interface ProgressEvent {
   total?: number
 }
 
-// A cache hit streams the model in through the same progress events as a real
-// download, just in a blink — so the bar would flash 0→100 and look broken.
-// Only surface the bar once a genuinely slow (network) download is underway.
-const DOWNLOAD_UI_DELAY_MS = 600
-
 // transformers.js fires progress per FILE, and a Whisper model pulls several
 // files — so a single per-file percentage bounces 0→100 repeatedly, which
 // reads as the bar "going crazy". Track bytes across all files and only ever
 // move the bar forward, for one smooth ramp to 100%.
 let downloadBytes = new Map<string, { loaded: number; total: number }>()
 let lastProgress = 0
-let loadStartedAt = 0
-let downloadingAnnounced = false
 
 function resetProgress(): void {
   downloadBytes = new Map()
   lastProgress = 0
-  loadStartedAt = Date.now()
-  downloadingAnnounced = false
 }
 
 function reportProgress(event: ProgressEvent): void {
@@ -120,15 +111,6 @@ function reportProgress(event: ProgressEvent): void {
   // Monotonic: swallow the backward jumps as each new file restarts at 0.
   if (pct <= lastProgress) return
   lastProgress = Math.min(100, pct)
-
-  // Don't flash a download bar for a cache hit: if progress reaches 100 before
-  // the delay elapses, the model came from cache and never really "downloaded",
-  // so we leave the UI on the "preparing" state instead.
-  if (!downloadingAnnounced) {
-    if (lastProgress >= 100) return
-    if (Date.now() - loadStartedAt < DOWNLOAD_UI_DELAY_MS) return
-    downloadingAnnounced = true
-  }
   listener({ phase: 'downloading', progress: lastProgress })
 }
 

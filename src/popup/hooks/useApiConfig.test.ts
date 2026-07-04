@@ -57,7 +57,9 @@ describe('useApiConfig', () => {
 
     expect(result.current.config).toMatchObject({
       targetLanguage: 'fr',
-      sourceLanguage: 'en',
+      // Source is always auto-detected now: a stored explicit code is migrated
+      // to 'auto' on load (the source picker was removed from the UI).
+      sourceLanguage: 'auto',
       uiLanguage: 'es',
       uiTheme: 'light',
     })

@@ -1,7 +1,7 @@
 {
   "tagline": "Real-time translation",
   "readyToTranslate": "Ready to translate",
-  "readyDescription": "Select languages and start translating tab audio",
+  "readyDescription": "Pick the output language. The source is detected automatically.",
   "downloadsOnStart": "downloads on start (one time)",
   "sourceLanguage": "Source language",
   "targetLanguage": "Output language",

@@ -6,8 +6,10 @@ export async function transcribeAudio(
 ): Promise<string> {
   const asr = await getTranscriber()
 
+  // 'auto' → let Whisper detect the language itself (omit the option). Any
+  // explicit ISO code is still honored for users who want to pin the source.
   const result = await asr(samples, {
-    language: sourceLanguage,
+    language: sourceLanguage === 'auto' ? undefined : sourceLanguage,
     task: 'transcribe',
   })
 
