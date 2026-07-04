@@ -1,7 +1,7 @@
 {
   "tagline": "Traducción en tiempo real",
   "readyToTranslate": "Listo para traducir",
-  "readyDescription": "Elige el idioma de salida. El original se detecta automáticamente.",
+  "readyDescription": "Elige los idiomas y traduce el audio de la pestaña",
   "downloadsOnStart": "se descarga al iniciar (una vez)",
   "sourceLanguage": "Idioma original",
   "targetLanguage": "Idioma de salida",
@@ -12,7 +12,6 @@
   "listening": "Escuchando…",
   "capturingAudio": "Capturando audio de esta pestaña",
   "translating": "Traduciendo…",
-  "generatingSubtitles": "Generando traducción del audio",
   "connecting": "Conectando…",
   "connectingDescription": "Configurando captura de audio",
   "tabAudioOnly": "Solo audio de esta pestaña",
@@ -39,7 +38,6 @@
   "preparingModel": "Preparando el modelo…",
   "playToStart": "Reproduce el vídeo para ver aquí la traducción",
   "modelReady": "Modelo listo",
-  "live": "En vivo",
   "saveError": "Error al guardar ajustes",
   "captureEnded": "Traducción detenida — se cerró la pestaña de origen",
   "captureNotAllowed": "Esta pestaña no se puede capturar. Abre el panel desde el icono de AuraLang en la pestaña que quieras traducir (las páginas internas de Chrome no se pueden traducir)."

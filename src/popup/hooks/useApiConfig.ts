@@ -10,9 +10,7 @@ function detectPreferredTheme(): 'dark' | 'light' {
 
 const DEFAULT_CONFIG: UserConfig = {
   targetLanguage: 'es',
-  // Source is always auto-detected now (no source picker in the UI); Whisper
-  // detects the language and Google Translate takes sl=auto.
-  sourceLanguage: 'auto',
+  sourceLanguage: 'en',
   uiLanguage: detectBrowserLocale(),
   uiTheme: detectPreferredTheme(),
   asrMode: 'auto',
@@ -45,9 +43,6 @@ export function useApiConfig(): UseUserConfigReturn {
           ...stored,
           uiLanguage: stored.uiLanguage ?? prev.uiLanguage,
           uiTheme: stored.uiTheme ?? prev.uiTheme,
-          // Migrate old configs that stored an explicit source language: the
-          // source picker is gone, detection is always on.
-          sourceLanguage: 'auto',
         }))
       }
       setIsLoaded(true)

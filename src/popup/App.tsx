@@ -7,10 +7,10 @@ import type { MessageKey } from './hooks/useI18n'
 import { useTheme } from './hooks/useTheme'
 import { useErrorToasts } from './hooks/useErrorToasts'
 import { useStatusToasts } from './hooks/useStatusToasts'
+import { useActiveStatus } from './hooks/useActiveStatus'
 import { Header } from './components/Header'
-import { StatusHero } from './components/StatusHero'
+import { StatusCircle } from './components/StatusCircle'
 import { LanguageSelect } from './components/LanguageSelect'
-import { WaveformIndicator } from './components/WaveformIndicator'
 import { PrimaryButton } from './components/PrimaryButton'
 import { Footer } from './components/Footer'
 import { SettingsPanel } from './components/SettingsPanel'
@@ -22,7 +22,8 @@ import { tierForMode } from '../asr/registry'
 
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [targetOpen, setTargetOpen] = useState(false)
+  // Only one language dropdown open at a time.
+  const [openSelect, setOpenSelect] = useState<'source' | 'target' | null>(null)
   const { config, updateField, error: saveError } = useApiConfig()
   useTheme(config.uiTheme)
   const { t } = useI18n(config.uiLanguage)
@@ -52,32 +53,7 @@ export default function App() {
       ? `${t('model.auto')} · ${selectedTierLabel} · ~${selectedTier.approxDownloadMB} MB · ${t('downloadsOnStart')}`
       : `${selectedTierLabel} · ~${selectedTier.approxDownloadMB} MB · ${t('downloadsOnStart')}`
 
-  const modelStatus = translation.modelStatus
-  const downloadProgress = modelStatus?.phase === 'downloading' ? modelStatus.progress : null
-  const probing = modelStatus?.phase === 'probing'
-  const modelLoading = translation.isActive && !translation.isModelReady
-
-  // Which model is actually running: the 'ready' status is authoritative; fall
-  // back to the resolved tier so the running model is shown even after reopen.
-  const runningTierId = modelStatus?.phase === 'ready' ? modelStatus.tier : selectedTier.id
-  const runningModelLabel = t(`model.${runningTierId}` as MessageKey)
-
-  const activeTitle = translation.isLoading
-    ? t('connecting')
-    : downloadProgress !== null
-      ? t('downloadingModel')
-      : modelLoading
-        ? t('loadingModel')
-        : t('listening')
-  const activeSubtitle = translation.isLoading
-    ? t('connectingDescription')
-    : downloadProgress !== null
-      ? t('downloadingModelDetail')
-      : probing
-        ? t('preparingModel')
-        : modelLoading
-          ? t('loadingModelDetail')
-          : `${t('capturingAudio')} · ${runningModelLabel}`
+  const activeStatus = useActiveStatus(translation, config.asrMode, t)
 
   return (
     <>
@@ -110,7 +86,7 @@ export default function App() {
           tagline={t('tagline')}
           settingsAriaLabel={t('settings.openAriaLabel')}
           onOpenSettings={() => {
-            setTargetOpen(false)
+            setOpenSelect(null)
             setSettingsOpen(true)
           }}
         />
@@ -137,10 +113,11 @@ export default function App() {
           <div className="flex min-h-0 flex-1 flex-col gap-4">
             {!translation.isActive ? (
               <>
-                <StatusHero
+                <StatusCircle
                   title={t('readyToTranslate')}
-                  description={t('readyDescription')}
-                  loading={false}
+                  subtitle={t('readyDescription')}
+                  animated={false}
+                  glow="none"
                 />
                 <p className="text-center text-caption text-muted">{modelNote}</p>
                 {/* Keep the last session's transcript visible after Stop. */}
@@ -154,12 +131,13 @@ export default function App() {
               </>
             ) : (
               <>
-                <WaveformIndicator
-                  title={activeTitle}
-                  subtitle={activeSubtitle}
-                  progress={downloadProgress}
-                  loading={modelLoading}
-                  intense
+                <StatusCircle
+                  title={activeStatus.title}
+                  subtitle={activeStatus.subtitle}
+                  progress={activeStatus.progress}
+                  loading={activeStatus.loading}
+                  animated
+                  glow="intense"
                 />
                 {/* Only draw the bordered transcript box once there are lines
                     to show. Before that: nothing while the model loads, and a
@@ -183,21 +161,34 @@ export default function App() {
           </div>
 
           {/* Fixed controls — same position in every state, so the language
-              picker and the primary button never jump. The picker is locked
-              (not hidden) while translating: the source is auto-detected, so
-              only the output language is chosen here. */}
-          <LanguageSelect
-            label={t('targetLanguage')}
-            value={config.targetLanguage}
-            uiLanguage={config.uiLanguage}
-            searchPlaceholder={t('searchLanguage')}
-            noResultsText={t('noResults')}
-            disabled={translation.isActive}
-            isOpen={targetOpen}
-            onOpenChange={setTargetOpen}
-            onChange={(value) => updateField('targetLanguage', value)}
-            placement="top"
-          />
+              pickers and the primary button never jump. Pickers stay visible
+              (locked, not hidden) while translating. */}
+          <div className="flex flex-col gap-3">
+            <LanguageSelect
+              label={t('sourceLanguage')}
+              value={config.sourceLanguage}
+              uiLanguage={config.uiLanguage}
+              searchPlaceholder={t('searchLanguage')}
+              noResultsText={t('noResults')}
+              disabled={translation.isActive}
+              isOpen={openSelect === 'source'}
+              onOpenChange={(open) => setOpenSelect(open ? 'source' : null)}
+              onChange={(value) => updateField('sourceLanguage', value)}
+              placement="top"
+            />
+            <LanguageSelect
+              label={t('targetLanguage')}
+              value={config.targetLanguage}
+              uiLanguage={config.uiLanguage}
+              searchPlaceholder={t('searchLanguage')}
+              noResultsText={t('noResults')}
+              disabled={translation.isActive}
+              isOpen={openSelect === 'target'}
+              onOpenChange={(open) => setOpenSelect(open ? 'target' : null)}
+              onChange={(value) => updateField('targetLanguage', value)}
+              placement="top"
+            />
+          </div>
 
           <PrimaryButton
             icon={translation.isActive ? <StopIcon /> : <PlayIcon />}
