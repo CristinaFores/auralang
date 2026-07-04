@@ -44,13 +44,25 @@ export default function App() {
 
   // The model isn't downloaded until the user hits Start, so the idle screen
   // shows which model will be pulled and its size — nothing downloads silently.
+  // In Auto mode the label is just "Auto", so we also spell out the concrete
+  // tier it resolves to on this device (Light/Balanced) — otherwise the user
+  // has no idea which model is actually about to run.
   const selectedTier = tierForMode(config.asrMode)
-  const modelNote = `${t(`model.${config.asrMode}` as MessageKey)} · ~${selectedTier.approxDownloadMB} MB · ${t('downloadsOnStart')}`
+  const selectedTierLabel = t(`model.${selectedTier.id}` as MessageKey)
+  const modelNote =
+    config.asrMode === 'auto'
+      ? `${t('model.auto')} · ${selectedTierLabel} · ~${selectedTier.approxDownloadMB} MB · ${t('downloadsOnStart')}`
+      : `${selectedTierLabel} · ~${selectedTier.approxDownloadMB} MB · ${t('downloadsOnStart')}`
 
   const modelStatus = translation.modelStatus
   const downloadProgress = modelStatus?.phase === 'downloading' ? modelStatus.progress : null
   const probing = modelStatus?.phase === 'probing'
   const modelLoading = translation.isActive && !translation.isModelReady
+
+  // Which model is actually running: the 'ready' status is authoritative; fall
+  // back to the resolved tier so the running model is shown even after reopen.
+  const runningTierId = modelStatus?.phase === 'ready' ? modelStatus.tier : selectedTier.id
+  const runningModelLabel = t(`model.${runningTierId}` as MessageKey)
 
   const activeTitle = translation.isLoading
     ? t('connecting')
@@ -67,7 +79,7 @@ export default function App() {
         ? t('preparingModel')
         : modelLoading
           ? t('loadingModelDetail')
-          : t('capturingAudio')
+          : `${t('capturingAudio')} · ${runningModelLabel}`
 
   return (
     <>

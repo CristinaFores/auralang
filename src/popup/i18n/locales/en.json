@@ -36,7 +36,7 @@
   "loadingModelDetail": "Getting the Whisper model ready…",
   "downloadingModel": "Downloading model…",
   "downloadingModelDetail": "First time only — it's saved for next time",
-  "preparingModel": "Almost there, preparing the model…",
+  "preparingModel": "Preparing the model…",
   "playToStart": "Play the video to see the translation here",
   "modelReady": "Model ready",
   "live": "Live",

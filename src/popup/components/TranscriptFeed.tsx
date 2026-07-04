@@ -41,18 +41,26 @@ export function TranscriptFeed({
             <div
               key={i}
               ref={isSpeaking ? speakingRef : undefined}
-              className={`flex flex-col gap-0.5 rounded-lg px-2 py-1 transition-colors ${
+              className={`flex animate-fade-in flex-col gap-0.5 rounded-lg px-2 py-1 transition-colors ${
                 isSpeaking ? 'bg-brand-purple/10' : i === transcripts.length - 1 ? '' : 'opacity-70'
               }`}
             >
               <p className="text-caption leading-snug text-muted">{entry.original}</p>
-              <p
-                className={`text-body leading-snug ${
-                  isSpeaking ? 'font-semibold text-brand-purple' : 'text-[var(--text-primary)]'
-                }`}
-              >
-                {entry.translated ?? translatingLabel}
-              </p>
+              {entry.translated === null ? (
+                // Pending translation: a soft pulse instead of a label that
+                // snaps to the final text, so the transition reads as fluid.
+                <p className="animate-pulse text-body italic leading-snug text-muted">
+                  {translatingLabel}
+                </p>
+              ) : (
+                <p
+                  className={`animate-fade-in text-body leading-snug ${
+                    isSpeaking ? 'font-semibold text-brand-purple' : 'text-[var(--text-primary)]'
+                  }`}
+                >
+                  {entry.translated}
+                </p>
+              )}
             </div>
           )
         })
