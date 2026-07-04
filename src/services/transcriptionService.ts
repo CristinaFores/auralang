@@ -1,4 +1,5 @@
 import { getTranscriber } from '../asr/modelManager'
+import { collapseRepeats } from '../utils/text'
 
 export async function transcribeAudio(
   samples: Float32Array,
@@ -12,5 +13,6 @@ export async function transcribeAudio(
   })
 
   const text = Array.isArray(result) ? result[0]?.text : result.text
-  return (text ?? '').trim()
+  // Strip Whisper's stutter hallucinations before translating/speaking.
+  return collapseRepeats((text ?? '').trim())
 }
