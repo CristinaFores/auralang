@@ -28,10 +28,15 @@ const WHISPER_SAMPLE_RATE = 16000
 const PAUSE_MS = 900
 const MIN_CHUNK_MS = 600
 const MAX_CHUNK_MS = 5000
+// A buffer with barely any voiced audio (video outro, room noise) makes
+// Whisper hallucinate filler like "you"/"Thank you" — which then gets
+// translated and spoken. Require a minimum of real speech before emitting.
+const MIN_SPEECH_MS = 300
 
 const PAUSE_SAMPLES = WHISPER_SAMPLE_RATE * (PAUSE_MS / 1000)
 const MIN_CHUNK_SAMPLES = WHISPER_SAMPLE_RATE * (MIN_CHUNK_MS / 1000)
 const MAX_CHUNK_SAMPLES = WHISPER_SAMPLE_RATE * (MAX_CHUNK_MS / 1000)
+const MIN_SPEECH_SAMPLES = WHISPER_SAMPLE_RATE * (MIN_SPEECH_MS / 1000)
 
 const WORKLET_URL = chrome.runtime.getURL('capture-worklet.js')
 
@@ -41,7 +46,7 @@ let mediaStream: MediaStream | null = null
 let pendingSamples: Float32Array[] = []
 let pendingLength = 0
 let silenceRunSamples = 0
-let hasSpeechInBuffer = false
+let speechSamples = 0
 
 function flush(handlers: AudioCaptureHandlers): void {
   const chunk = new Float32Array(pendingLength)
@@ -53,11 +58,11 @@ function flush(handlers: AudioCaptureHandlers): void {
   pendingSamples = []
   pendingLength = 0
   silenceRunSamples = 0
-  const shouldEmit = hasSpeechInBuffer
-  hasSpeechInBuffer = false
+  const shouldEmit = speechSamples >= MIN_SPEECH_SAMPLES
+  speechSamples = 0
 
-  // Don't bother sending an all-silence buffer to Whisper — it has nothing to
-  // transcribe and near-empty audio is exactly what triggers hallucinated output.
+  // Don't send near-silent buffers to Whisper — nothing to transcribe, and
+  // near-empty audio is exactly what triggers hallucinated output ("you").
   if (shouldEmit) handlers.onChunk(chunk)
 }
 
@@ -69,7 +74,7 @@ function pushSamples(samples: Float32Array, handlers: AudioCaptureHandlers): voi
     silenceRunSamples += samples.length
   } else {
     silenceRunSamples = 0
-    hasSpeechInBuffer = true
+    speechSamples += samples.length
   }
 
   const hitPause = silenceRunSamples >= PAUSE_SAMPLES && pendingLength >= MIN_CHUNK_SAMPLES
@@ -133,6 +138,8 @@ export function stopAudioCapture(): void {
   captureNode = null
   pendingSamples = []
   pendingLength = 0
+  silenceRunSamples = 0
+  speechSamples = 0
 
   // Release the capture stream. While a tab-capture track is live, Chrome
   // keeps the tab captured — and a captured tab stays muted. Disconnecting

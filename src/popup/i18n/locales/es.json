@@ -28,6 +28,7 @@
   "model.light": "Ligero",
   "model.balanced": "Equilibrado",
   "model.autoHint": "Elige el modelo según la potencia de tu equipo.",
+  "model.autoResolved": "En este equipo",
   "model.lightHint": "Más rápido, menos preciso. Descarga ~150 MB.",
   "model.balancedHint": "Más preciso, algo más lento. Descarga ~290 MB la primera vez.",
   "model.lockedHint": "Detén la traducción para cambiar de modelo.",

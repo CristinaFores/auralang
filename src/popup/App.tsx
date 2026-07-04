@@ -53,6 +53,11 @@ export default function App() {
       ? `${t('model.auto')} · ${selectedTierLabel} · ~${selectedTier.approxDownloadMB} MB · ${t('downloadsOnStart')}`
       : `${selectedTierLabel} · ~${selectedTier.approxDownloadMB} MB · ${t('downloadsOnStart')}`
 
+  // What Auto resolves to on THIS device, shown in the settings hint so the
+  // user knows which model "Auto" actually means — regardless of current mode.
+  const autoTier = tierForMode('auto')
+  const autoResolvedNote = `${t('model.autoResolved')}: ${t(`model.${autoTier.id}` as MessageKey)} · ~${autoTier.approxDownloadMB} MB.`
+
   const activeStatus = useActiveStatus(translation, config.asrMode, t)
 
   return (
@@ -98,6 +103,7 @@ export default function App() {
           uiTheme={config.uiTheme}
           asrMode={config.asrMode}
           asrModeLocked={translation.isActive}
+          autoResolvedNote={autoResolvedNote}
           backdropCloseAriaLabel={t('settings.backdropAriaLabel')}
           closeAriaLabel={t('settings.closeAriaLabel')}
           onLanguageChange={(lang: UiLanguage) => updateField('uiLanguage', lang)}

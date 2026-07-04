@@ -28,6 +28,7 @@
   "model.light": "Light",
   "model.balanced": "Balanced",
   "model.autoHint": "Picks the model based on your device's power.",
+  "model.autoResolved": "On this device",
   "model.lightHint": "Faster, less accurate. ~150 MB download.",
   "model.balancedHint": "More accurate, a bit slower. ~290 MB download the first time.",
   "model.lockedHint": "Stop translation to switch models.",
