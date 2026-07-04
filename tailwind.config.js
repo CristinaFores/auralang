@@ -44,6 +44,7 @@ export default {
         pulseGlow: 'pulseGlow 2s ease-in-out infinite',
         waveform: 'waveform 1.2s ease-in-out infinite',
         'fade-in': 'fadeIn 0.28s ease-out',
+        indeterminate: 'indeterminate 1.1s ease-in-out infinite',
       },
       keyframes: {
         pulseGlow: {
@@ -57,6 +58,10 @@ export default {
         fadeIn: {
           '0%': { opacity: '0', transform: 'translateY(3px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        indeterminate: {
+          '0%': { left: '-40%' },
+          '100%': { left: '100%' },
         },
       },
     },

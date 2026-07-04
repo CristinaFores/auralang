@@ -132,12 +132,9 @@ export default function App() {
 
         <div className="flex min-h-0 flex-1 flex-col gap-4 pt-4">
           {/* Content zone — swaps between idle and active, but stays the same
-              flex-1 region so the controls below never shift position. */}
-          <div
-            className={`flex min-h-0 flex-1 flex-col gap-4 ${
-              translation.isActive ? '' : 'justify-center'
-            }`}
-          >
+              flex-1 region. Top-aligned in BOTH states so the status circle
+              keeps the same position and never jumps when translation starts. */}
+          <div className="flex min-h-0 flex-1 flex-col gap-4">
             {!translation.isActive ? (
               <>
                 <StatusHero
@@ -161,6 +158,7 @@ export default function App() {
                   title={activeTitle}
                   subtitle={activeSubtitle}
                   progress={downloadProgress}
+                  loading={modelLoading}
                   intense
                 />
                 {/* Hide the transcript box while the model loads — an empty feed
