@@ -6,9 +6,16 @@ import { DEFAULT_TIER } from './registry'
 // extension version cannot be read at runtime here.
 import { version as EXTENSION_VERSION } from '../../manifest.json'
 
-// Force local WASM — MV3 blocks external CDN scripts.
+// Force local WASM — MV3 blocks external CDN scripts. This module now runs
+// inside a Web Worker, where chrome.* APIs don't exist — derive the extension
+// base URL from the worker script's own location instead.
+const EXTENSION_BASE_URL =
+  typeof chrome !== 'undefined' && chrome.runtime?.getURL
+    ? chrome.runtime.getURL('')
+    : new URL('/', self.location.href).href
+
 if (env.backends.onnx.wasm) {
-  env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL('')
+  env.backends.onnx.wasm.wasmPaths = EXTENSION_BASE_URL
   // Single-thread: SharedArrayBuffer needs COEP, which breaks tabCapture in offscreen
   env.backends.onnx.wasm.numThreads = 1
 }
@@ -35,10 +42,11 @@ function rungKey(tier: ModelTier, rung: DtypeRung): string {
   return `${tier.modelId}|${rung.device}|${rung.encoderDtype}|${rung.decoderDtype}|${EXTENSION_VERSION}`
 }
 
-// localStorage, not chrome.storage: this module runs in the offscreen
-// document, where the only extension API available is chrome.runtime —
-// chrome.storage is undefined there. localStorage on the extension origin
-// persists across offscreen document recreations just the same.
+// localStorage, not chrome.storage: chrome.storage is unavailable both in the
+// offscreen document and in workers. Inside the ASR worker localStorage does
+// not exist either — the try/catch below turns persistence into a no-op
+// there, which only costs retrying a known-bad rung on next startup. Today
+// every tier ships a single fp32 rung, so nothing is lost in practice.
 function getBadRungs(): string[] {
   try {
     const raw = localStorage.getItem(BAD_RUNGS_KEY)
@@ -63,13 +71,55 @@ function markBad(key: string): void {
 
 interface ProgressEvent {
   status: string
+  file?: string
   progress?: number
+  loaded?: number
+  total?: number
+}
+
+// transformers.js fires progress per FILE, and a Whisper model pulls several
+// files — so a single per-file percentage bounces 0→100 repeatedly, which
+// reads as the bar "going crazy". Track bytes across all files and only ever
+// move the bar forward, for one smooth ramp to 100%.
+let downloadBytes = new Map<string, { loaded: number; total: number }>()
+let lastProgress = 0
+
+function resetProgress(): void {
+  downloadBytes = new Map()
+  lastProgress = 0
 }
 
 function reportProgress(event: ProgressEvent): void {
-  if (event.status === 'progress' && typeof event.progress === 'number') {
-    listener({ phase: 'downloading', progress: Math.round(event.progress) })
+  if (
+    event.file &&
+    typeof event.loaded === 'number' &&
+    typeof event.total === 'number' &&
+    event.total > 0
+  ) {
+    downloadBytes.set(event.file, { loaded: event.loaded, total: event.total })
   }
+
+  if (event.status !== 'progress') return
+
+  let loaded = 0
+  let total = 0
+  for (const bytes of downloadBytes.values()) {
+    loaded += bytes.loaded
+    total += bytes.total
+  }
+
+  // Fall back to the raw per-file percentage if byte totals aren't reported.
+  const pct =
+    total > 0
+      ? Math.round((loaded / total) * 100)
+      : typeof event.progress === 'number'
+        ? Math.round(event.progress)
+        : lastProgress
+
+  // Monotonic: swallow the backward jumps as each new file restarts at 0.
+  if (pct <= lastProgress) return
+  lastProgress = Math.min(100, pct)
+  listener({ phase: 'downloading', progress: lastProgress })
 }
 
 async function loadRung(
@@ -87,6 +137,7 @@ async function loadRung(
 }
 
 async function loadTier(tier: ModelTier): Promise<AutomaticSpeechRecognitionPipeline> {
+  resetProgress()
   const bad = getBadRungs()
 
   // Prefer rungs not previously known to fail, but if every rung is flagged

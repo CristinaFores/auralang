@@ -6,10 +6,11 @@ import { useI18n } from './hooks/useI18n'
 import type { MessageKey } from './hooks/useI18n'
 import { useTheme } from './hooks/useTheme'
 import { useErrorToasts } from './hooks/useErrorToasts'
+import { useStatusToasts } from './hooks/useStatusToasts'
+import { useActiveStatus } from './hooks/useActiveStatus'
 import { Header } from './components/Header'
-import { StatusHero } from './components/StatusHero'
+import { StatusCircle } from './components/StatusCircle'
 import { LanguageSelect } from './components/LanguageSelect'
-import { WaveformIndicator } from './components/WaveformIndicator'
 import { PrimaryButton } from './components/PrimaryButton'
 import { Footer } from './components/Footer'
 import { SettingsPanel } from './components/SettingsPanel'
@@ -19,11 +20,10 @@ import type { UiLanguage, UiTheme } from '../types'
 import type { AsrMode } from '../asr/types'
 import { tierForMode } from '../asr/registry'
 
-type OpenSelect = 'source' | 'target' | null
-
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [openSelect, setOpenSelect] = useState<OpenSelect>(null)
+  // Only one language dropdown open at a time.
+  const [openSelect, setOpenSelect] = useState<'source' | 'target' | null>(null)
   const { config, updateField, error: saveError } = useApiConfig()
   useTheme(config.uiTheme)
   const { t } = useI18n(config.uiLanguage)
@@ -39,28 +39,26 @@ export default function App() {
     t,
   })
 
+  useStatusToasts({ modelStatus: translation.modelStatus, t })
+
   // The model isn't downloaded until the user hits Start, so the idle screen
   // shows which model will be pulled and its size — nothing downloads silently.
+  // In Auto mode the label is just "Auto", so we also spell out the concrete
+  // tier it resolves to on this device (Light/Balanced) — otherwise the user
+  // has no idea which model is actually about to run.
   const selectedTier = tierForMode(config.asrMode)
-  const modelNote = `${t(`model.${config.asrMode}` as MessageKey)} · ~${selectedTier.approxDownloadMB} MB · ${t('downloadsOnStart')}`
+  const selectedTierLabel = t(`model.${selectedTier.id}` as MessageKey)
+  const modelNote =
+    config.asrMode === 'auto'
+      ? `${t('model.auto')} · ${selectedTierLabel} · ~${selectedTier.approxDownloadMB} MB · ${t('downloadsOnStart')}`
+      : `${selectedTierLabel} · ~${selectedTier.approxDownloadMB} MB · ${t('downloadsOnStart')}`
 
-  const downloadProgress =
-    translation.modelStatus?.phase === 'downloading' ? translation.modelStatus.progress : null
-  const modelLoading = translation.isActive && !translation.isModelReady
+  // What Auto resolves to on THIS device, shown in the settings hint so the
+  // user knows which model "Auto" actually means — regardless of current mode.
+  const autoTier = tierForMode('auto')
+  const autoResolvedNote = `${t('model.autoResolved')}: ${t(`model.${autoTier.id}` as MessageKey)} · ~${autoTier.approxDownloadMB} MB.`
 
-  const activeTitle = translation.isLoading
-    ? t('connecting')
-    : modelLoading
-      ? t('loadingModel')
-      : t('listening')
-  const activeSubtitle =
-    downloadProgress !== null
-      ? `${t('loadingModelDetail')} ${downloadProgress}%`
-      : modelLoading
-        ? t('loadingModelDetail')
-        : translation.isLoading
-          ? t('connectingDescription')
-          : t('capturingAudio')
+  const activeStatus = useActiveStatus(translation, config.asrMode, t)
 
   return (
     <>
@@ -105,6 +103,7 @@ export default function App() {
           uiTheme={config.uiTheme}
           asrMode={config.asrMode}
           asrModeLocked={translation.isActive}
+          autoResolvedNote={autoResolvedNote}
           backdropCloseAriaLabel={t('settings.backdropAriaLabel')}
           closeAriaLabel={t('settings.closeAriaLabel')}
           onLanguageChange={(lang: UiLanguage) => updateField('uiLanguage', lang)}
@@ -114,71 +113,101 @@ export default function App() {
         />
 
         <div className="flex min-h-0 flex-1 flex-col gap-4 pt-4">
-          {!translation.isActive ? (
-            <>
-              <StatusHero
-                title={t('readyToTranslate')}
-                description={t('readyDescription')}
-                loading={false}
-              />
-
-              <p className="text-center text-caption text-muted">{modelNote}</p>
-
-              <div className="flex flex-col gap-3">
-                <LanguageSelect
-                  label={t('sourceLanguage')}
-                  value={config.sourceLanguage}
-                  uiLanguage={config.uiLanguage}
-                  searchPlaceholder={t('searchLanguage')}
-                  noResultsText={t('noResults')}
-                  isOpen={openSelect === 'source'}
-                  onOpenChange={(open) => setOpenSelect(open ? 'source' : null)}
-                  onChange={(value) => updateField('sourceLanguage', value)}
+          {/* Content zone — swaps between idle and active, but stays the same
+              flex-1 region. Top-aligned in BOTH states so the status circle
+              keeps the same position and never jumps when translation starts. */}
+          <div className="flex min-h-0 flex-1 flex-col gap-4">
+            {!translation.isActive ? (
+              <>
+                <StatusCircle
+                  title={t('readyToTranslate')}
+                  subtitle={t('readyDescription')}
+                  animated={false}
+                  glow="none"
                 />
-                <LanguageSelect
-                  label={t('targetLanguage')}
-                  value={config.targetLanguage}
-                  uiLanguage={config.uiLanguage}
-                  searchPlaceholder={t('searchLanguage')}
-                  noResultsText={t('noResults')}
-                  isOpen={openSelect === 'target'}
-                  onOpenChange={(open) => setOpenSelect(open ? 'target' : null)}
-                  onChange={(value) => updateField('targetLanguage', value)}
-                  placement="top"
+                <p className="text-center text-caption text-muted">{modelNote}</p>
+                {/* Keep the last session's transcript visible after Stop. */}
+                {translation.transcripts.length > 0 && (
+                  <TranscriptFeed
+                    transcripts={translation.transcripts}
+                    translatingLabel={t('translating')}
+                    speakingOriginal={translation.speakingOriginal}
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                <StatusCircle
+                  title={activeStatus.title}
+                  subtitle={activeStatus.subtitle}
+                  progress={activeStatus.progress}
+                  loading={activeStatus.loading}
+                  animated
+                  glow="intense"
                 />
-              </div>
+                {/* Only draw the bordered transcript box once there are lines
+                    to show. Before that: nothing while the model loads, and a
+                    calm centered hint (no empty container) once we're listening,
+                    so the waiting space reads as intentional, not unfinished. */}
+                {translation.transcripts.length > 0 ? (
+                  <TranscriptFeed
+                    transcripts={translation.transcripts}
+                    translatingLabel={t('translating')}
+                    speakingOriginal={translation.speakingOriginal}
+                  />
+                ) : (
+                  translation.isModelReady && (
+                    <div className="flex flex-1 items-center justify-center px-6 text-center">
+                      <p className="text-body text-muted">{t('playToStart')}</p>
+                    </div>
+                  )
+                )}
+              </>
+            )}
+          </div>
 
-              {/* Keep the last session's transcript visible after Stop. */}
-              {translation.transcripts.length > 0 && (
-                <TranscriptFeed
-                  transcripts={translation.transcripts}
-                  translatingLabel={t('translating')}
-                  speakingOriginal={translation.speakingOriginal}
-                />
-              )}
+          {/* Fixed controls — same position in every state, so the language
+              pickers and the primary button never jump. Pickers stay visible
+              (locked, not hidden) while translating. */}
+          <div className="flex flex-col gap-3">
+            <LanguageSelect
+              label={t('sourceLanguage')}
+              value={config.sourceLanguage}
+              uiLanguage={config.uiLanguage}
+              searchPlaceholder={t('searchLanguage')}
+              noResultsText={t('noResults')}
+              disabled={translation.isActive}
+              isOpen={openSelect === 'source'}
+              onOpenChange={(open) => setOpenSelect(open ? 'source' : null)}
+              onChange={(value) => updateField('sourceLanguage', value)}
+              placement="top"
+            />
+            <LanguageSelect
+              label={t('targetLanguage')}
+              value={config.targetLanguage}
+              uiLanguage={config.uiLanguage}
+              searchPlaceholder={t('searchLanguage')}
+              noResultsText={t('noResults')}
+              disabled={translation.isActive}
+              isOpen={openSelect === 'target'}
+              onOpenChange={(open) => setOpenSelect(open ? 'target' : null)}
+              onChange={(value) => updateField('targetLanguage', value)}
+              placement="top"
+            />
+          </div>
 
-              <PrimaryButton icon={<PlayIcon />} onClick={toggle} disabled={translation.isLoading}>
-                {translation.isLoading ? t('connecting') : t('startTranslation')}
-              </PrimaryButton>
-            </>
-          ) : (
-            <>
-              <WaveformIndicator title={activeTitle} subtitle={activeSubtitle} intense />
-              <TranscriptFeed
-                transcripts={translation.transcripts}
-                translatingLabel={t('translating')}
-                speakingOriginal={translation.speakingOriginal}
-              />
-              <PrimaryButton
-                icon={<StopIcon />}
-                onClick={toggle}
-                variant="ghost"
-                disabled={translation.isLoading}
-              >
-                {translation.isLoading ? t('connecting') : t('stop')}
-              </PrimaryButton>
-            </>
-          )}
+          <PrimaryButton
+            icon={translation.isActive ? <StopIcon /> : <PlayIcon />}
+            onClick={toggle}
+            variant={translation.isActive ? 'ghost' : 'primary'}
+            disabled={translation.isLoading}
+          >
+            {translation.isLoading
+              ? t('connecting')
+              : translation.isActive
+                ? t('stop')
+                : t('startTranslation')}
+          </PrimaryButton>
         </div>
 
         <Footer label={t('tabAudioOnly')} />

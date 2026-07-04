@@ -11,6 +11,8 @@ interface SettingsPanelProps {
   uiTheme: UiTheme
   asrMode: AsrMode
   asrModeLocked: boolean
+  // What Auto resolves to on this device, e.g. "En este equipo: Equilibrado · ~290 MB".
+  autoResolvedNote: string
   backdropCloseAriaLabel: string
   closeAriaLabel: string
   onLanguageChange: (lang: UiLanguage) => void
@@ -26,6 +28,7 @@ export function SettingsPanel({
   uiTheme,
   asrMode,
   asrModeLocked,
+  autoResolvedNote,
   backdropCloseAriaLabel,
   closeAriaLabel,
   onLanguageChange,
@@ -99,7 +102,7 @@ export function SettingsPanel({
                 ? t('model.balancedHint')
                 : asrMode === 'light'
                   ? t('model.lightHint')
-                  : t('model.autoHint')}
+                  : `${t('model.autoHint')} ${autoResolvedNote}`}
           </span>
         </div>
       </div>
