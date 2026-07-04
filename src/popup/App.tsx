@@ -161,16 +161,22 @@ export default function App() {
                   loading={modelLoading}
                   intense
                 />
-                {/* Hide the transcript box while the model loads — an empty feed
-                    there just reads as a giant blank panel. Once ready, an empty
-                    feed tells the user to play the video. */}
-                {translation.isModelReady && (
+                {/* Only draw the bordered transcript box once there are lines
+                    to show. Before that: nothing while the model loads, and a
+                    calm centered hint (no empty container) once we're listening,
+                    so the waiting space reads as intentional, not unfinished. */}
+                {translation.transcripts.length > 0 ? (
                   <TranscriptFeed
                     transcripts={translation.transcripts}
                     translatingLabel={t('translating')}
-                    emptyHint={t('playToStart')}
                     speakingOriginal={translation.speakingOriginal}
                   />
+                ) : (
+                  translation.isModelReady && (
+                    <div className="flex flex-1 items-center justify-center px-6 text-center">
+                      <p className="text-body text-muted">{t('playToStart')}</p>
+                    </div>
+                  )
                 )}
               </>
             )}
