@@ -1,4 +1,4 @@
-import { transcribeAudio } from '../services/transcriptionService'
+import { transcribe } from './asrClient'
 import { translateText } from '../services/translationService'
 import { speak, stopSpeech } from '../services/ttsService'
 import { isSilent } from '../utils/audioLevel'
@@ -27,7 +27,7 @@ export async function processAudioChunk(
 
   const mySession = sessionId
 
-  const raw = await transcribeAudio(samples, sourceLang)
+  const raw = await transcribe(samples, sourceLang)
   if (sessionId !== mySession) return
 
   // A chunk that is exactly one of Whisper's known silence/noise fillers

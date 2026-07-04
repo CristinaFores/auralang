@@ -1,14 +1,13 @@
 import { startAudioCapture, stopAudioCapture } from './audioCapture'
 import { processAudioChunk, resetPipelineState } from './pipeline'
-import { setModelTier, onModelStatus } from '../asr/modelManager'
-import { tierForMode } from '../asr/registry'
+import { onAsrModelStatus, setAsrMode } from './asrClient'
 import { enqueueChunk, clearQueue } from '../asr/inferenceQueue'
 import { onSpeakingChange } from '../services/ttsService'
 import type { ExtensionMessage, StartCapturePayload } from '../types'
 
 let modelReady = false
 
-onModelStatus((status) => {
+onAsrModelStatus((status) => {
   modelReady = status.phase === 'ready'
   if (status.phase === 'ready') {
     // Kept alongside MODEL_STATUS so the popup's existing readiness check
@@ -33,7 +32,7 @@ chrome.runtime.onMessage.addListener(
 
       // Guarantee the selected tier is (loading) before capture, in case the
       // popup's preload SET_ASR_MODE never reached us. No-op if already loaded.
-      setModelTier(tierForMode(asrMode))
+      setAsrMode(asrMode)
 
       startAudioCapture(streamId, {
         onChunk: (samples) => {

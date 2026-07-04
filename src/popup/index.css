@@ -45,6 +45,12 @@
     display: block;
     max-width: none;
   }
+
+  /* Buttons don't get a pointer cursor by default — make every enabled
+     interactive control show one. */
+  button:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 @keyframes pulseGlow {
